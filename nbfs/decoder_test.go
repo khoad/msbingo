@@ -15,9 +15,8 @@ func TestDecodeExample1(t *testing.T) {
 	expected := string(xmlBytes)
 	actual, err := decoder.Decode(bin)
 	if err != nil {
-		return t.Error("Expected err")
-	} else if err.Error() != "Invalid DictionaryString value at offset 2" {
-		return t.Error("Expected Invalid DictionaryString message")
+		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
+		return
 	}
 	if expected != actual {
 		t.Error(actual + "\nnot equal to expected\n" + expected)

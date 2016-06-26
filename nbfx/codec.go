@@ -1,6 +1,7 @@
 package nbfx
 
 type codec struct {
+	dict map[uint32]string
 }
 
 type Encoder interface {
@@ -11,11 +12,6 @@ type Decoder interface {
 	Decode(bin []byte) (string, error)
 }
 
-var dict = map[uint32]string{
-	2: "Envelope",
-	8: "Header",
-}
-
-func addDictionaryString(index uint32, value string) {
-	dict[index] = value
+func (c *codec) addDictionaryString(index uint32, value string) {
+	c.dict[index] = value
 }
