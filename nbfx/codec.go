@@ -11,7 +11,10 @@ type Decoder interface {
 	Decode(bin []byte) (string, error)
 }
 
-var dict = map[uint32]string{}
+var dict = map[uint32]string{
+	2: "Envelope",
+	8: "Header",
+}
 
 func addDictionaryString(index uint32, value string) {
 	dict[index] = value
