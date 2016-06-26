@@ -1,32 +1,18 @@
 package nbfx
 
+type codec struct {
+}
+
 type Encoder interface {
-	Encode(xml string) []byte
+	Encode(xml string) ([]byte, error)
 }
-
-type encoder struct {
-}
-
-func NewEncoder() Encoder {
-	return &encoder{}
-}
-
-func (e *encoder) Encode(xml string) []byte {
-	return []byte{}
-}
-
 
 type Decoder interface {
-	Decode(bin []byte) string
+	Decode(bin []byte) (string, error)
 }
 
-type decoder struct {
-}
+var dict = map[uint32]string{}
 
-func NewDecoder() Decoder {
-	return &decoder{}
-}
-
-func (d *decoder) Decode(bin []byte) string {
-		return ""
+func addDictionaryString(index uint32, value string) {
+	dict[index] = value
 }

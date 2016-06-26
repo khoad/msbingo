@@ -16,7 +16,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	println(dictionaryString[0x04])
+	//println(dictionaryString[0x04])
 }
 
 func printErrorAndExit(err error) {

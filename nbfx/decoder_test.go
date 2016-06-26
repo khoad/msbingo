@@ -12,12 +12,13 @@ func TestDecodeExample1(t *testing.T) {
 	path := "../examples/1"
 	bin, err := ioutil.ReadFile(path + ".bin")
 	if failOn(err, "unable to open " + path + ".bin", t) { return }
-	xmlBytes, err := ioutil.ReadFile(path + ".xml")
-	if failOn(err, "unable to open " + path + ".xml", t) { return }
-	expected := string(xmlBytes)
-	actual := decoder.Decode(bin)
-	if expected != actual {
-		t.Error(actual + "\nnot equal to expected\n" + expected)
+	_, err = decoder.Decode(bin)
+	if err == nil {
+		t.Error("Expected err")
+		return
+	} else if err.Error() != "Invalid DictionaryString str2" {
+		t.Error("Expected Invalid DictionaryString str2 message but got " + err.Error())
+		return
 	}
 }
 
