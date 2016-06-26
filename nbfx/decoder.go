@@ -33,7 +33,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 		record := getRecord(&d.codec, b)
 		//println("getRecord ", record)
 		if record == nil {
-			return "", errors.New(fmt.Sprintf("Unknown Record ID %x", b))
+			return "", errors.New(fmt.Sprintf("Unknown Record ID %#X", b))
 		}
 		bytes, err := record.read(reader)
 		if err != nil {
