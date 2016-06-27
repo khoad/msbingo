@@ -16,7 +16,7 @@ var nbfsDictionary = map[uint32]string{
 	0x00: "mustUnderstand",
 	0x02: "Envelope",
 	0x04: "http://www.w3.org/2003/05/soap-envelope",
-	0x06: "http://www.w3.org/2005/08/**//addressing",
+	0x06: "http://www.w3.org/2005/08/addressing",
 	0x08: "Header",
 	0x0A: "Action",
 	0x0C: "To",

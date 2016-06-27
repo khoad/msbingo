@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"bytes"
+	"encoding/xml"
 )
 
 type decoder struct {
@@ -26,29 +27,51 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 
 func (d *decoder) Decode(bin []byte) (string, error) {
 	reader := bytes.NewReader(bin)
-	xml := bytes.Buffer{}
+	xmlBuf := &bytes.Buffer{}
+	xmlEncoder := xml.NewEncoder(xmlBuf)
 	b, err := reader.ReadByte()
-	//println("ReadByte", string(b), err == nil)
+	var startingElement xml.StartElement
+	haveStartingElement := false
 	for err == nil {
 		record := getRecord(&d.codec, b)
-		//println("getRecord ", record)
 		if record == nil {
-			return "", errors.New(fmt.Sprintf("Unknown Record ID %#X", b))
+			xmlEncoder.Flush()
+			return xmlBuf.String(), errors.New(fmt.Sprintf("Unknown Record ID %#X", b))
 		}
-		//fmt.Println("Record:", record.name())
-		bytes, err := record.read(reader)
+		var token xml.Token
+		token, err = record.read(reader)
 		if err != nil {
-			return "", err
+			xmlEncoder.Flush()
+			return xmlBuf.String(), err
 		}
-		xml.Write(bytes)
+		if record.isElementStart() {
+			if haveStartingElement {
+				xmlEncoder.EncodeToken(startingElement)
+			}
+			haveStartingElement = true
+			startingElement = token.(xml.StartElement)
+		} else if record.isAttribute() {
+			startingElement.Attr = append(startingElement.Attr, token.(xml.Attr))
+		} else {
+			if haveStartingElement {
+				xmlEncoder.EncodeToken(startingElement)
+				haveStartingElement = false
+			}
+			xmlEncoder.EncodeToken(token)
+		}
+
 		b, err = reader.ReadByte()
 	}
-	return xml.String(), nil
+	xmlEncoder.Flush()
+	return xmlBuf.String(), nil
 }
 
 type record interface {
-	read(reader *bytes.Reader) ([]byte, error)
-	name() string
+	isElementStart() bool
+	isAttribute() bool
+	getName() string
+	getToken() xml.Token
+	read(reader *bytes.Reader) (xml.Token, error)
 }
 
 func getRecord(codec *codec, b byte) record {
@@ -65,20 +88,40 @@ type prefixDictionaryElementS struct {
 	codec *codec
 }
 
-func (r *prefixDictionaryElementS) name() string {
+func (r *prefixDictionaryElementS) isElementStart() bool{
+	return true
+}
+
+func (r *prefixDictionaryElementS) isAttribute() bool {
+	return false
+}
+
+func (r *prefixDictionaryElementS) getName() string {
 	return "PrefixDictionaryElementS (0x56)"
 }
 
-func (r *prefixDictionaryElementS) read(reader *bytes.Reader) ([]byte, error) {
-	b, err := reader.ReadByte()
+func (r *prefixDictionaryElementS) getToken() xml.Token {
+	panic("NIException")
+}
+
+func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error) {
+	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
 	}
-	key := uint32(b)
-	if val, ok := r.codec.dict[key]; ok {
-		return []byte(val), nil
+	return xml.StartElement{Name:xml.Name{Local:"s:" + name}}, nil
+}
+
+func readDictionaryString(reader *bytes.Reader, codec *codec) (string, error) {
+	b, err := reader.ReadByte()
+	if err != nil {
+		return "", err
 	}
-	return nil, errors.New(fmt.Sprint("Invalid DictionaryString str", key))
+	key := uint32(b)
+	if val, ok := codec.dict[key]; ok {
+		return val, nil
+	}
+	return "", errors.New(fmt.Sprint("Invalid DictionaryString str", key))
 }
 
 //(0x0B)
@@ -86,21 +129,35 @@ type dictionaryXmlnsAttribute struct {
 	codec *codec
 }
 
-func (r *dictionaryXmlnsAttribute) name() string {
+func (r *dictionaryXmlnsAttribute) isElementStart() bool{
+	return false
+}
+
+func (r *dictionaryXmlnsAttribute) isAttribute() bool {
+	return true
+}
+
+func (r *dictionaryXmlnsAttribute) getName() string {
 	return "dictionaryXmlnsAttribute (0x0B)"
 }
 
-func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) ([]byte, error) {
-	strBytes, err := readString(reader)
+func (r *dictionaryXmlnsAttribute) getToken() xml.Token {
+	panic("NIException")
+}
+
+func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) (xml.Token, error) {
+	name, err := readString(reader)
 	if err != nil {
-		return strBytes, err
+		return name, err
 	}
-	strBytes = append(strBytes, []byte(":")[0])
-	_, err = reader.ReadByte()
+
+	val, err := readDictionaryString(reader, r.codec)
 	if err != nil {
-		return strBytes, err
+		return nil, err
 	}
-	return strBytes, nil
+	fmt.Println("Attr", name, val)
+
+	return xml.Attr{Name:xml.Name{Local:"xmlns:" + name}, Value:val}, nil
 }
 
 func readMultiByteInt31(reader * bytes.Reader) (uint32, error) {
@@ -111,20 +168,20 @@ func readMultiByteInt31(reader * bytes.Reader) (uint32, error) {
 	return uint32(b), nil //TODO: Handle multibyte values!!!
 }
 
-func readString(reader *bytes.Reader) ([]byte, error) {
+func readString(reader *bytes.Reader) (string, error) {
 	var len uint32
 	len, err := readMultiByteInt31(reader)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	strBytes := *new([]byte)
+	strBuffer := bytes.Buffer{}
 	for i := uint32(0); i < len; {
 		b, err := reader.ReadByte()
 		if err != nil {
-			return strBytes, err
+			return strBuffer.String(), err
 		}
-		strBytes = append(strBytes, b)
+		strBuffer.WriteByte(b)
 		i++
 	}
-	return strBytes, nil
+	return strBuffer.String(), nil
 }
