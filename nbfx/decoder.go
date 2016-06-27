@@ -49,7 +49,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 		record := getRecord(&d.codec, b)
 		if record == nil {
 			xmlEncoder.Flush()
-			return xmlBuf.String(), errors.New(fmt.Sprintf("Unknown Record ID %#X", b))
+			return xmlBuf.String(), errors.New(fmt.Sprintf("Unknown Record ID %#x", b))
 		}
 		var token xml.Token
 		token, err = record.read(reader)
@@ -80,7 +80,6 @@ type record interface {
 	isElementStart() bool
 	isAttribute() bool
 	getName() string
-	getToken() xml.Token
 	read(reader *bytes.Reader) (xml.Token, error)
 }
 
@@ -110,10 +109,6 @@ func (r *prefixDictionaryElementS) getName() string {
 	return "PrefixDictionaryElementS (0x56)"
 }
 
-func (r *prefixDictionaryElementS) getToken() xml.Token {
-	panic("NIException")
-}
-
 func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
@@ -131,7 +126,7 @@ func readDictionaryString(reader *bytes.Reader, codec *codec) (string, error) {
 	if val, ok := codec.dict[key]; ok {
 		return val, nil
 	}
-	return "", errors.New(fmt.Sprint("Invalid DictionaryString str", key))
+	return fmt.Sprintf("str%d", b), nil
 }
 
 //(0x0B)
@@ -149,10 +144,6 @@ func (r *dictionaryXmlnsAttribute) isAttribute() bool {
 
 func (r *dictionaryXmlnsAttribute) getName() string {
 	return "dictionaryXmlnsAttribute (0x0B)"
-}
-
-func (r *dictionaryXmlnsAttribute) getToken() xml.Token {
-	panic("NIException")
 }
 
 func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) (xml.Token, error) {
