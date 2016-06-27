@@ -1,6 +1,7 @@
 package nbfx
 
 import (
+	"io"
 	"fmt"
 	"errors"
 	"bytes"
@@ -32,6 +33,18 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	b, err := reader.ReadByte()
 	var startingElement xml.StartElement
 	haveStartingElement := false
+	flushStartElement := func() {
+		if haveStartingElement {
+			xmlEncoder.EncodeToken(startingElement)
+		}
+		haveStartingElement = false
+		startingElement = xml.StartElement{}
+	}
+	initStartElement := func(token xml.Token) {
+		flushStartElement()
+		haveStartingElement = true
+		startingElement = token.(xml.StartElement)
+	}
 	for err == nil {
 		record := getRecord(&d.codec, b)
 		if record == nil {
@@ -45,24 +58,21 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			return xmlBuf.String(), err
 		}
 		if record.isElementStart() {
-			if haveStartingElement {
-				xmlEncoder.EncodeToken(startingElement)
-			}
-			haveStartingElement = true
-			startingElement = token.(xml.StartElement)
+			initStartElement(token)
 		} else if record.isAttribute() {
 			startingElement.Attr = append(startingElement.Attr, token.(xml.Attr))
 		} else {
-			if haveStartingElement {
-				xmlEncoder.EncodeToken(startingElement)
-				haveStartingElement = false
-			}
+			flushStartElement()
 			xmlEncoder.EncodeToken(token)
 		}
 
 		b, err = reader.ReadByte()
 	}
+	flushStartElement()
 	xmlEncoder.Flush()
+	if err != nil && err != io.EOF {
+		return xmlBuf.String(), err
+	}
 	return xmlBuf.String(), nil
 }
 

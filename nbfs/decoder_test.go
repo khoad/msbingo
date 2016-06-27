@@ -25,7 +25,7 @@ func TestDecodeExample1(t *testing.T) {
 }
 
 func TestDecodePrefixDictionaryElementS(t *testing.T) {
-	bin := []byte {0x56, 0x02, 0x01}
+	bin := []byte {0x56, 0x02}
 
 	decoder := NewDecoder()
 	actual, err := decoder.Decode(bin)
@@ -33,7 +33,7 @@ func TestDecodePrefixDictionaryElementS(t *testing.T) {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
 		return
 	}
-	assertEqual(t, actual, "<s:Envelope></s:Envelope>")
+	assertEqual(t, actual, "<s:Envelope>")
 }
 
 func assertEqual(t *testing.T, actual, expected string) {
