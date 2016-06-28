@@ -50,7 +50,7 @@ func TestDecodePrefixDictionaryElementS(t *testing.T) {
 
 func assertStringEqual(t *testing.T, actual, expected string) {
 	if expected != actual {
-		t.Error(actual + "\nnot equal to expected\n" + expected)
+		t.Error(actual + " not equal to expected " + expected)
 	}
 }
 

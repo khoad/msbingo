@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 type encoder struct {
@@ -55,13 +54,9 @@ func getRecordFromToken(codec *codec, token xml.Token) record {
 }
 
 func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement) record {
+	//fmt.Printf("Getting start element for %s", startElement.Name.Local)
+	prefix := startElement.Name.Space
 	name := startElement.Name.Local
-	parts := strings.Split(name, ":")
-	prefix := ""
-	if len(parts) > 1 {
-		prefix = parts[0]
-		name = parts[1]
-	}
 	prefixIndex := -1
 	if len(prefix) == 1 && byte(prefix[0]) >= byte('a') && byte(prefix[0]) <= byte('z') {
 		prefixIndex = int(byte(prefix[0]) - byte('a'))

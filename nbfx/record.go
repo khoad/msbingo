@@ -131,7 +131,6 @@ func (r *dictionaryXmlnsAttributeRecord) read(reader *bytes.Reader) (xml.Token, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Attr", name, val)
 
 	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
 }
