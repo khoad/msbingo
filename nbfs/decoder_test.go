@@ -1,17 +1,21 @@
 package nbfs
 
 import (
-	"testing"
 	"io/ioutil"
+	"testing"
 )
 
 func TestDecodeExample1(t *testing.T) {
 	decoder := NewDecoder()
 	path := "../examples/1"
 	bin, err := ioutil.ReadFile(path + ".bin")
-	if failOn(err, "unable to open " + path + ".bin", t) { return }
+	if failOn(err, "unable to open "+path+".bin", t) {
+		return
+	}
 	xmlBytes, err := ioutil.ReadFile(path + ".xml")
-	if failOn(err, "unable to open " + path + ".xml", t) { return }
+	if failOn(err, "unable to open "+path+".xml", t) {
+		return
+	}
 	expected := string(xmlBytes)
 	actual, err := decoder.Decode(bin)
 	if err != nil {
@@ -25,7 +29,7 @@ func TestDecodeExample1(t *testing.T) {
 }
 
 func TestDecodePrefixDictionaryElementS(t *testing.T) {
-	bin := []byte {0x56, 0x02}
+	bin := []byte{0x56, 0x02}
 
 	decoder := NewDecoder()
 	actual, err := decoder.Decode(bin)
@@ -49,4 +53,3 @@ func failOn(err error, message string, t *testing.T) bool {
 	}
 	return false
 }
-

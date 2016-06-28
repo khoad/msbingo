@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
 )
 
 func main() {
@@ -11,7 +11,7 @@ func main() {
 	printErrorAndExit(err)
 
 	// Naive check
-	if (bin[0] != 0x56 || bin[1] != 0x02) {
+	if bin[0] != 0x56 || bin[1] != 0x02 {
 		println("encoded file looks invalid, exiting...")
 		os.Exit(1)
 	}

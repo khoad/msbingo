@@ -2,8 +2,8 @@ package nbfx
 
 import (
 	"bytes"
-	"errors"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -36,15 +36,19 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		if record == nil {
 			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Unknown Token %s", token))
 		}
+		err = record.write(binBuffer)
+		if err != nil {
+			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s", token))
+		}
 		token, err = xmlDecoder.RawToken()
 	}
-	return []byte{}, errors.New("NotImplemented: nbfx.Encoder.Encode(string)")
+	return binBuffer.Bytes(), nil
 }
 
 func getRecordFromToken(codec *codec, token xml.Token) record {
 	switch token.(type) {
-		case xml.StartElement:
-			return getStartElementRecordFromToken(codec, token.(xml.StartElement))
+	case xml.StartElement:
+		return getStartElementRecordFromToken(codec, token.(xml.StartElement))
 	}
 
 	return nil
@@ -75,7 +79,7 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 		} else {
 			return &dictionaryElementRecord{nameIndex: nameIndex}
 		}
-	} else if (prefixIndex != -1){
+	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
 			return &prefixElementAZRecord{prefixIndex: prefixIndex, name: name}
 		} else {

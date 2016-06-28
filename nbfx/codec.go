@@ -1,7 +1,7 @@
 package nbfx
 
 type codec struct {
-	dict map[uint32]string
+	dict        map[uint32]string
 	reverseDict map[string]uint32
 }
 

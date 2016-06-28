@@ -1,11 +1,11 @@
 package nbfx
 
 import (
-	"io"
-	"fmt"
-	"errors"
 	"bytes"
 	"encoding/xml"
+	"errors"
+	"fmt"
+	"io"
 )
 
 type decoder struct {
@@ -76,7 +76,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	return xmlBuf.String(), nil
 }
 
-func readMultiByteInt31(reader * bytes.Reader) (uint32, error) {
+func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 	b, err := reader.ReadByte()
 	if err != nil {
 		return 0, err
