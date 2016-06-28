@@ -25,6 +25,8 @@ func getRecord(codec *codec, b byte) record {
 //(0x56)
 type prefixDictionaryElementS struct {
 	codec *codec
+	prefix string
+	name string
 }
 
 func (r *prefixDictionaryElementS) isElementStart() bool{
@@ -45,6 +47,32 @@ func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error)
 		return nil, err
 	}
 	return xml.StartElement{Name:xml.Name{Local:"s:" + name}}, nil
+}
+
+//(0x43)
+type dictionaryElement struct {
+	codec *codec
+	name string
+}
+
+func (r *dictionaryElement) isElementStart() bool{
+	return true
+}
+
+func (r *dictionaryElement) isAttribute() bool {
+	return false
+}
+
+func (r *dictionaryElement) getName() string {
+	return "DictionaryElement (0x43)"
+}
+
+func (r *dictionaryElement) read(reader *bytes.Reader) (xml.Token, error) {
+	name, err := readDictionaryString(reader, r.codec)
+	if err != nil {
+		return nil, err
+	}
+	return xml.StartElement{Name:xml.Name{Local: name}}, nil
 }
 
 func readDictionaryString(reader *bytes.Reader, codec *codec) (string, error) {
