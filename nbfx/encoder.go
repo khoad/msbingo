@@ -58,9 +58,9 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 		prefix = parts[0]
 		name = parts[1]
 	}
-	isPrefixAZ := -1
+	prefixIndex := -1
 	if len(prefix) == 1 && byte(prefix[0]) >= byte('a') && byte(prefix[0]) <= byte('z') {
-		isPrefixAZ = int(byte(prefix[0]) - byte('a'))
+		prefixIndex = int(byte(prefix[0]) - byte('a'))
 	}
 	var nameIndex uint32
 	isNameIndexAssigned := false
@@ -68,18 +68,24 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 		nameIndex = i
 		isNameIndexAssigned = true
 	}
-	if isNameIndexAssigned {
-		if prefix == "" {
-			return &dictionaryElement{nameIndex: nameIndex, name: name}
-		} else if (isPrefixAZ >= 0){
-			return &prefixDictionaryElementS{prefixIndex: isPrefixAZ, prefix: prefix, nameIndex: nameIndex, name: name}
-		} else {
-			return &dictionaryElement{prefix: prefix, nameIndex: nameIndex, name: name}
-		}
-	}
+
 	if prefix == "" {
-		return &shortElement{name: name}
+		if !isNameIndexAssigned {
+			return &shortElementRecord{name: name}
+		} else {
+			return &dictionaryElementRecord{nameIndex: nameIndex}
+		}
+	} else if (prefixIndex != -1){
+		if !isNameIndexAssigned {
+			return &prefixElementAZRecord{prefixIndex: prefixIndex, name: name}
+		} else {
+			return &prefixDictionaryElementSRecord{prefixIndex: prefixIndex, nameIndex: nameIndex}
+		}
 	} else {
-		return &prefixShortElement{prefix: prefix}
+		if !isNameIndexAssigned {
+			return &elementRecord{prefix: prefix, name: name}
+		} else {
+			return &dictionaryElementRecord{prefix: prefix, nameIndex: nameIndex}
+		}
 	}
 }

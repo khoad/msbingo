@@ -2,6 +2,7 @@ package nbfx
 
 import (
 	"bytes"
+	"errors"
 	"encoding/xml"
 	"fmt"
 )
@@ -15,35 +16,34 @@ type record interface {
 
 func getRecord(codec *codec, b byte) record {
 	if b == 0x56 {
-		return &prefixDictionaryElementS{codec: codec}
+		return &prefixDictionaryElementSRecord{codec: codec}
 	} else if b == 0x0B {
-		return &dictionaryXmlnsAttribute{codec}
+		return &dictionaryXmlnsAttributeRecord{codec: codec}
 	}
 	return nil
 }
 
+type startElementRecord struct {}
+func (r *startElementRecord) isElementStart() bool { return true; }
+func (r *startElementRecord) isAttribute() bool { return false; }
+
+type attributeRecord struct {}
+func (r *attributeRecord) isElementStart() bool { return false }
+func (r *attributeRecord) isAttribute() bool { return true }
+
 //(0x56)
-type prefixDictionaryElementS struct {
-	codec       *codec
-	prefix      string
+type prefixDictionaryElementSRecord struct {
+	codec *codec
+	*startElementRecord
 	prefixIndex int
-	name        string
-	nameIndex   uint32
+	nameIndex uint32
 }
 
-func (r *prefixDictionaryElementS) isElementStart() bool {
-	return true
-}
-
-func (r *prefixDictionaryElementS) isAttribute() bool {
-	return false
-}
-
-func (r *prefixDictionaryElementS) getName() string {
+func (r *prefixDictionaryElementSRecord) getName() string {
 	return "PrefixDictionaryElementS (0x56)"
 }
 
-func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *prefixDictionaryElementSRecord) read(reader *bytes.Reader) (xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
@@ -52,26 +52,18 @@ func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error)
 }
 
 //(0x43)
-type dictionaryElement struct {
-	codec     *codec
-	name      string
+type dictionaryElementRecord struct {
+	codec *codec
+	*startElementRecord
 	nameIndex uint32
-	prefix    string
+	prefix string
 }
 
-func (r *dictionaryElement) isElementStart() bool {
-	return true
-}
-
-func (r *dictionaryElement) isAttribute() bool {
-	return false
-}
-
-func (r *dictionaryElement) getName() string {
+func (r *dictionaryElementRecord) getName() string {
 	return "DictionaryElement (0x43)"
 }
 
-func (r *dictionaryElement) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *dictionaryElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
@@ -92,23 +84,16 @@ func readDictionaryString(reader *bytes.Reader, codec *codec) (string, error) {
 }
 
 //(0x0B)
-type dictionaryXmlnsAttribute struct {
+type dictionaryXmlnsAttributeRecord struct {
 	codec *codec
+	*attributeRecord
 }
 
-func (r *dictionaryXmlnsAttribute) isElementStart() bool {
-	return false
-}
-
-func (r *dictionaryXmlnsAttribute) isAttribute() bool {
-	return true
-}
-
-func (r *dictionaryXmlnsAttribute) getName() string {
+func (r *dictionaryXmlnsAttributeRecord) getName() string {
 	return "dictionaryXmlnsAttribute (0x0B)"
 }
 
-func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *dictionaryXmlnsAttributeRecord) read(reader *bytes.Reader) (xml.Token, error) {
 	name, err := readString(reader)
 	if err != nil {
 		return name, err
@@ -123,46 +108,49 @@ func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) (xml.Token, error)
 	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
 }
 
-//(0x40)
-type shortElement struct {
+// 0x40
+type shortElementRecord struct {
 	codec *codec
-	name  string
+	*startElementRecord
+	name string
 }
 
-func (r *shortElement) isElementStart() bool {
-	return false
+func (r *shortElementRecord) getName() string {
+	return "shortElementRecord (0x40)"
 }
 
-func (r *shortElement) isAttribute() bool {
-	return true
+func (r *shortElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return nil, errors.New("NotImplemented: shortElementRecord.read")
 }
 
-func (r *shortElement) getName() string {
-	return "shortElement (0x40)"
+// 0x5E-0x77
+type prefixElementAZRecord struct {
+	codec *codec
+	*startElementRecord
+	name string
+	prefixIndex int
 }
 
-func (r *shortElement) read(reader *bytes.Reader) (xml.Token, error) {
-	panic("NIE")
+func (r *prefixElementAZRecord) getName() string {
+	return "prefixElementAZRecord (0x5E-0x77)"
 }
 
-//??
-type prefixShortElement struct {
-	codec  *codec
+func (r *prefixElementAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return nil, errors.New("NotImplemented: prefixElementAZRecord.read")
+}
+
+// 0x41
+type elementRecord struct {
+	codec *codec
+	*startElementRecord
+	name string
 	prefix string
 }
 
-func (r *prefixShortElement) isElementStart() bool {
-	return false
+func (r *elementRecord) getName() string {
+	return "elementRecord (0x41)"
 }
 
-func (r *prefixShortElement) isAttribute() bool {
-	return true
-}
-
-func (r *prefixShortElement) getName() string {
-	return "prefixShortElement (??)"
-}
-
-func (r *prefixShortElement) read(reader *bytes.Reader) (xml.Token, error) {
-	panic("NIE")
+func (r *elementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return nil, errors.New("NotImplemented: elementRecord.read")
 }
