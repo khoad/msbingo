@@ -17,11 +17,10 @@ type record interface {
 }
 
 func getRecord(codec *codec, b byte) record {
-	if b == 0x56 {
-		return &prefixDictionaryElementSRecord{codec: codec}
-	} else if b == 0x0B {
-		return &dictionaryXmlnsAttributeRecord{codec: codec}
+	if recordFunc, ok := records[b]; ok {
+		return recordFunc(codec)
 	}
+
 	return nil
 }
 
@@ -34,6 +33,21 @@ type attributeRecord struct{}
 
 func (r *attributeRecord) isElementStart() bool { return false }
 func (r *attributeRecord) isAttribute() bool    { return true }
+
+var records = map[byte]func(*codec) record{
+	0x56: func(codec *codec) record { return &prefixDictionaryElementSRecord{codec: codec} },
+	0x43: func(codec *codec) record { return &dictionaryElementRecord{codec: codec} },
+	0x0B: func(codec *codec) record { return &dictionaryXmlnsAttributeRecord{codec: codec} },
+	0x40: func(codec *codec) record { return &shortElementRecord{codec: codec} },
+	0x41: func(codec *codec) record { return &elementRecord{codec: codec} },
+	//0x5E-0x77: func(){return prefixElementAZRecord{0x5E-0x77}}, ADDED IN init()
+}
+
+func init() {
+	for b := 0; b < 26; b++ {
+		records[byte(0x5E+b)] = func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: b} }
+	}
+}
 
 //(0x56)
 type prefixDictionaryElementSRecord struct {
@@ -56,7 +70,9 @@ func (r *prefixDictionaryElementSRecord) read(reader *bytes.Reader) (xml.Token, 
 }
 
 func (r *prefixDictionaryElementSRecord) write(writer io.Writer) error {
-	return errors.New("NotImplemented: prefixDictionaryElementSRecord.write")
+	writer.Write([]byte{0x56})
+	_, err := writeMultiByteInt31(writer, r.nameIndex)
+	return err
 }
 
 //(0x43)

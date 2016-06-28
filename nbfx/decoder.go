@@ -84,6 +84,14 @@ func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 	return uint32(b), nil //TODO: Handle multibyte values!!!
 }
 
+func writeMultiByteInt31(writer io.Writer, i uint32) (int, error) {
+	b, err := writer.Write([]byte{byte(i)}) //TODO: Handle multibyte values!!!
+	if err != nil {
+		return b, err
+	}
+	return b, nil
+}
+
 func readString(reader *bytes.Reader) (string, error) {
 	var len uint32
 	len, err := readMultiByteInt31(reader)

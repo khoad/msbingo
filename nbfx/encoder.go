@@ -38,7 +38,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		}
 		err = record.write(binBuffer)
 		if err != nil {
-			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s", token))
+			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
 		}
 		token, err = xmlDecoder.RawToken()
 	}
