@@ -15,7 +15,7 @@ type record interface {
 
 func getRecord(codec *codec, b byte) record {
 	if b == 0x56 {
-		return &prefixDictionaryElementS{codec}
+		return &prefixDictionaryElementS{codec: codec}
 	} else if b == 0x0B {
 		return &dictionaryXmlnsAttribute{codec}
 	}
@@ -24,12 +24,14 @@ func getRecord(codec *codec, b byte) record {
 
 //(0x56)
 type prefixDictionaryElementS struct {
-	codec *codec
-	prefix string
-	name string
+	codec       *codec
+	prefix      string
+	prefixIndex int
+	name        string
+	nameIndex   uint32
 }
 
-func (r *prefixDictionaryElementS) isElementStart() bool{
+func (r *prefixDictionaryElementS) isElementStart() bool {
 	return true
 }
 
@@ -46,16 +48,18 @@ func (r *prefixDictionaryElementS) read(reader *bytes.Reader) (xml.Token, error)
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name:xml.Name{Local:"s:" + name}}, nil
+	return xml.StartElement{Name: xml.Name{Local: "s:" + name}}, nil
 }
 
 //(0x43)
 type dictionaryElement struct {
-	codec *codec
-	name string
+	codec     *codec
+	name      string
+	nameIndex uint32
+	prefix    string
 }
 
-func (r *dictionaryElement) isElementStart() bool{
+func (r *dictionaryElement) isElementStart() bool {
 	return true
 }
 
@@ -72,7 +76,7 @@ func (r *dictionaryElement) read(reader *bytes.Reader) (xml.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name:xml.Name{Local: name}}, nil
+	return xml.StartElement{Name: xml.Name{Local: name}}, nil
 }
 
 func readDictionaryString(reader *bytes.Reader, codec *codec) (string, error) {
@@ -92,7 +96,7 @@ type dictionaryXmlnsAttribute struct {
 	codec *codec
 }
 
-func (r *dictionaryXmlnsAttribute) isElementStart() bool{
+func (r *dictionaryXmlnsAttribute) isElementStart() bool {
 	return false
 }
 
@@ -116,5 +120,49 @@ func (r *dictionaryXmlnsAttribute) read(reader *bytes.Reader) (xml.Token, error)
 	}
 	fmt.Println("Attr", name, val)
 
-	return xml.Attr{Name:xml.Name{Local:"xmlns:" + name}, Value:val}, nil
+	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
+}
+
+//(0x40)
+type shortElement struct {
+	codec *codec
+	name  string
+}
+
+func (r *shortElement) isElementStart() bool {
+	return false
+}
+
+func (r *shortElement) isAttribute() bool {
+	return true
+}
+
+func (r *shortElement) getName() string {
+	return "shortElement (0x40)"
+}
+
+func (r *shortElement) read(reader *bytes.Reader) (xml.Token, error) {
+	panic("NIE")
+}
+
+//??
+type prefixShortElement struct {
+	codec  *codec
+	prefix string
+}
+
+func (r *prefixShortElement) isElementStart() bool {
+	return false
+}
+
+func (r *prefixShortElement) isAttribute() bool {
+	return true
+}
+
+func (r *prefixShortElement) getName() string {
+	return "prefixShortElement (??)"
+}
+
+func (r *prefixShortElement) read(reader *bytes.Reader) (xml.Token, error) {
+	panic("NIE")
 }

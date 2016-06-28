@@ -17,7 +17,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{codec{make(map[uint32]string)}}
+	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.codec.addDictionaryString(k, v)

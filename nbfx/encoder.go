@@ -17,7 +17,7 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{codec{make(map[uint32]string)}}
+	encoder := &encoder{codec{make(map[uint32]string), make(map[string]uint32)}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			encoder.codec.addDictionaryString(k, v)
@@ -32,15 +32,16 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 	xmlDecoder := xml.NewDecoder(reader)
 	token, err := xmlDecoder.RawToken()
 	for err == nil {
-		record := getRecordFromToken(encoder.codec, token)
+		record := getRecordFromToken(&e.codec, token)
 		if record == nil {
 			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Unknown Token %s", token))
 		}
+		token, err = xmlDecoder.RawToken()
 	}
 	return []byte{}, errors.New("NotImplemented: nbfx.Encoder.Encode(string)")
 }
 
-func getRecordFromToken(codec codec, token xml.Token) record {
+func getRecordFromToken(codec *codec, token xml.Token) record {
 	switch token.(type) {
 		case xml.StartElement:
 			return getStartElementRecordFromToken(codec, token.(xml.StartElement))
@@ -58,25 +59,27 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 		name = parts[1]
 	}
 	isPrefixAZ := -1
-	if len(prefix) == 1 && byte(prefix) >= byte('a') && byte(prefix) <= byte('z') {
-		isPrefixAZ = byte(prefix) - byte('a')
+	if len(prefix) == 1 && byte(prefix[0]) >= byte('a') && byte(prefix[0]) <= byte('z') {
+		isPrefixAZ = int(byte(prefix[0]) - byte('a'))
 	}
-	nameIndex := -1
+	var nameIndex uint32
+	isNameIndexAssigned := false
 	if i, ok := codec.reverseDict[name]; ok {
 		nameIndex = i
+		isNameIndexAssigned = true
 	}
-	if nameIndex >= 0 {
+	if isNameIndexAssigned {
 		if prefix == "" {
-			return dictionaryElement{nameIndex: nameIndex, name: name}
+			return &dictionaryElement{nameIndex: nameIndex, name: name}
 		} else if (isPrefixAZ >= 0){
-			return prefixDictionaryElementS{prefixIndex: isPrefixAZ, prefix: prefix, nameIndex: nameIndex, name: name}
+			return &prefixDictionaryElementS{prefixIndex: isPrefixAZ, prefix: prefix, nameIndex: nameIndex, name: name}
 		} else {
-			return dictionaryElement{prefix: prefix, nameIndex: nameIndex, name: name}
+			return &dictionaryElement{prefix: prefix, nameIndex: nameIndex, name: name}
 		}
 	}
 	if prefix == "" {
-		return shortElement{name: name}
+		return &shortElement{name: name}
 	} else {
-		return prefixShortElement{prefix: prefix}
+		return &prefixShortElement{prefix: prefix}
 	}
 }
