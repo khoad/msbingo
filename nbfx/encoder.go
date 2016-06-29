@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 )
 
 type encoder struct {
@@ -89,21 +90,12 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 	}
 }
 
-func writeString(reader *bytes.Reader) (string, error) {
-	//var len uint32
-	//strLen := len(str)
-	//if err != nil {
-	//	return "", err
-	//}
-	//strBuffer := bytes.Buffer{}
-	//for i := uint32(0); i < len; {
-	//	b, err := reader.ReadByte()
-	//	if err != nil {
-	//		return strBuffer.String(), err
-	//	}
-	//	strBuffer.WriteByte(b)
-	//	i++
-	//}
-	//return strBuffer.String(), nil
-	return "", nil
+func writeString(writer io.Writer, str string) (int, error) {
+	var strBytes = []byte(str)
+	lenByteLen, err := writeMultiByteInt31(writer, uint32(len(strBytes)))
+	if err != nil {
+		return lenByteLen, err
+	}
+	strByteLen, err := writer.Write(strBytes)
+	return lenByteLen + strByteLen, err
 }
