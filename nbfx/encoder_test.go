@@ -21,17 +21,17 @@ import (
 //	}
 //}
 
-//func TestEncodePrefixDictionaryElementB(t *testing.T) {
-//	bin := []byte {0x45, 0x02}
-//
-//	encoder := NewEncoder()
-//	actual, err := encoder.Encode(bin)
-//	if err != nil {
-//		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
-//		return
-//	}
-//	assertBinEqual(t, actual, "<b:str2>")
-//}
+func TestEncodePrefixDictionaryElementB(t *testing.T) {
+	xml := "<b:Foo>"
+
+	encoder := NewEncoderWithStrings(map[uint32]string{0x02: "Foo"})
+	actual, err := encoder.Encode(xml)
+	if err != nil {
+		t.Error("Unexpected error: " + err.Error() + " Got: " + fmt.Sprintf("%x", actual))
+		return
+	}
+	assertBinEqual(t, actual, []byte{0x45, 0x02})
+}
 
 func TestEncodePrefixDictionaryElementS(t *testing.T) {
 	xml := "<s:Foo>"

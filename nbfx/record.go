@@ -35,42 +35,44 @@ func (r *attributeRecord) isElementStart() bool { return false }
 func (r *attributeRecord) isAttribute() bool    { return true }
 
 var records = map[byte]func(*codec) record{
-	0x56: func(codec *codec) record { return &prefixDictionaryElementSRecord{codec: codec} },
 	0x43: func(codec *codec) record { return &dictionaryElementRecord{codec: codec} },
 	0x0B: func(codec *codec) record { return &dictionaryXmlnsAttributeRecord{codec: codec} },
 	0x40: func(codec *codec) record { return &shortElementRecord{codec: codec} },
 	0x41: func(codec *codec) record { return &elementRecord{codec: codec} },
-	//0x5E-0x77: func(){return prefixElementAZRecord{0x5E-0x77}}, ADDED IN init()
+	//0x44-0x5D: func(codec *codec) record { return &prefixDictionaryElementAZRecord{codec: codec, prefixIndex: 0x44-ox5D}}, ADDED IN init()
+	//0x5E-0x77: func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: 0x5E-0x77}}, ADDED IN init()
 }
 
 func init() {
 	for b := 0; b < 26; b++ {
-		records[byte(0x5E+b)] = func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: b} }
+		byt := byte(b)
+		records[byte(0x44+byt)] = func(codec *codec) record { return &prefixDictionaryElementAZRecord{codec: codec, prefixIndex: byt} }
+		records[byte(0x5E+byt)] = func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: byt} }
 	}
 }
 
-//(0x56)
-type prefixDictionaryElementSRecord struct {
+//(0x44-0x5D)
+type prefixDictionaryElementAZRecord struct {
 	codec *codec
 	*startElementRecord
-	prefixIndex int
+	prefixIndex byte
 	nameIndex   uint32
 }
 
-func (r *prefixDictionaryElementSRecord) getName() string {
-	return "PrefixDictionaryElementS (0x56)"
+func (r *prefixDictionaryElementAZRecord) getName() string {
+	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A') + r.prefixIndex), r.prefixIndex)
 }
 
-func (r *prefixDictionaryElementSRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *prefixDictionaryElementAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name: xml.Name{Local: "s:" + name}}, nil
+	return xml.StartElement{Name: xml.Name{Local: string(byte('a' + byte(r.prefixIndex))) + ":" + name}}, nil
 }
 
-func (r *prefixDictionaryElementSRecord) write(writer io.Writer) error {
-	writer.Write([]byte{0x56})
+func (r *prefixDictionaryElementAZRecord) write(writer io.Writer) error {
+	writer.Write([]byte{0x44 + r.prefixIndex})
 	_, err := writeMultiByteInt31(writer, r.nameIndex)
 	return err
 }
@@ -163,10 +165,11 @@ type prefixElementAZRecord struct {
 	codec *codec
 	*startElementRecord
 	name        string
-	prefixIndex int
+	prefixIndex byte
 }
 
 func (r *prefixElementAZRecord) getName() string {
+	//return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A') + r.prefixIndex), r.prefixIndex)
 	return "prefixElementAZRecord (0x5E-0x77)"
 }
 

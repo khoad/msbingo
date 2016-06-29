@@ -76,9 +76,9 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return &prefixElementAZRecord{prefixIndex: prefixIndex, name: name}
+			return &prefixElementAZRecord{prefixIndex: byte(prefixIndex), name: name}
 		} else {
-			return &prefixDictionaryElementSRecord{prefixIndex: prefixIndex, nameIndex: nameIndex}
+			return &prefixDictionaryElementAZRecord{prefixIndex: byte(prefixIndex), nameIndex: nameIndex}
 		}
 	} else {
 		if !isNameIndexAssigned {
