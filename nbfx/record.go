@@ -60,7 +60,7 @@ type prefixDictionaryElementAZRecord struct {
 }
 
 func (r *prefixDictionaryElementAZRecord) getName() string {
-	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A') + r.prefixIndex), r.prefixIndex)
+	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A')+r.prefixIndex), r.prefixIndex)
 }
 
 func (r *prefixDictionaryElementAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
@@ -68,7 +68,7 @@ func (r *prefixDictionaryElementAZRecord) read(reader *bytes.Reader) (xml.Token,
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name: xml.Name{Local: string(byte('a' + byte(r.prefixIndex))) + ":" + name}}, nil
+	return xml.StartElement{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}, nil
 }
 
 func (r *prefixDictionaryElementAZRecord) write(writer io.Writer) error {
@@ -169,7 +169,6 @@ type prefixElementAZRecord struct {
 }
 
 func (r *prefixElementAZRecord) getName() string {
-	//return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A') + r.prefixIndex), r.prefixIndex)
 	return "prefixElementAZRecord (0x5E-0x77)"
 }
 

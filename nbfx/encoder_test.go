@@ -1,26 +1,28 @@
 package nbfx
 
 import (
-	"testing"
-	//"io/ioutil"
-	"fmt"
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"testing"
 )
 
-//func TestEncodeExample1(t *testing.T) {
-//	encoder := NewEncoder()
-//	path := "../examples/1"
-//	bin, err := ioutil.ReadFile(path + ".xml")
-//	if failOn(err, "unable to open " + path + ".xml", t) { return }
-//	_, err = encoder.Encode(string(bin))
-//	if err == nil {
-//		t.Error("Expected err")
-//		return
-//	} else if err.Error() != "Unknown Record ID 0x44" {
-//		t.Error("Expected Unknown Record ID 0x44 message but got " + err.Error())
-//		return
-//	}
-//}
+func TestEncodeExample1(t *testing.T) {
+	encoder := NewEncoder()
+	path := "../examples/1"
+	bin, err := ioutil.ReadFile(path + ".xml")
+	if failOn(err, "unable to open "+path+".xml", t) {
+		return
+	}
+	_, err = encoder.Encode(string(bin))
+	if err == nil {
+		t.Error("Expected err")
+		return
+	} else if err.Error() != "Unknown Record ID 0x44" {
+		t.Error("Expected Unknown Record ID 0x44 message but got " + err.Error())
+		return
+	}
+}
 
 func TestEncodePrefixDictionaryElementB(t *testing.T) {
 	xml := "<b:Foo>"
@@ -62,8 +64,12 @@ func TestWriteMultiByteInt31_16384(t *testing.T) {
 	testWriteMultiByteInt31(t, 16384, []byte{0x80, 0x80, 0x01})
 }
 
+func TestWriteMultiByteInt31_2097152(t *testing.T) {
+	testWriteMultiByteInt31(t, 2097152, []byte{0x80, 0x80, 0x80, 0x01})
+}
+
 func TestWriteMultiByteInt31_268435456(t *testing.T) {
-	testWriteMultiByteInt31(t, 268435456, []byte{0x80, 0x80, 0x80, 0x01})
+	testWriteMultiByteInt31(t, 268435456, []byte{0x80, 0x80, 0x80, 0x80, 0x01})
 }
 
 func TestWriteString_abc(t *testing.T) {
@@ -102,6 +108,7 @@ func assertBinEqual(t *testing.T, actual, expected []byte) {
 	}
 	for i, b := range actual {
 		if b != expected[i] {
+			fmt.Println("actual", actual, "expected", expected)
 			t.Error(fmt.Sprintf("%x differs from expected %x at index %d", actual, expected, i))
 		}
 	}

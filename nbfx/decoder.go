@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 )
 
 type decoder struct {
@@ -76,23 +77,72 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	return xmlBuf.String(), nil
 }
 
+var MASK_MBI31 = byte(0x80)
+
 func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
-	b, err := reader.ReadByte()
-	if err != nil {
-		return 0, err
+	buf := new([5]byte)
+	keepReading := true
+	i := -1
+	for keepReading {
+		i++
+		b, err := reader.ReadByte()
+		if err != nil {
+			return 0, err
+		}
+		if b >= MASK_MBI31 {
+			b -= MASK_MBI31
+			keepReading = true
+		} else {
+			keepReading = false
+		}
+		buf[i] = b
 	}
-	return uint32(b), nil //TODO: Handle multibyte values!!!
+	var val uint32
+	for ; i >= 0; i-- {
+		val += uint32(buf[i]) * uint32(math.Pow(128, float64(i)))
+	}
+	return val, nil
 }
 
-func writeMultiByteInt31(writer io.Writer, i uint32) (int, error) {
-	var b int
-	var err error
-	if i >
-	//:= writer.Write([]byte{byte(i)}) //TODO: Handle multibyte values!!!
-	if err != nil {
-		return b, err
+func writeMultiByteInt31(writer io.Writer, num uint32) (int, error) {
+	max := uint32(2147483647)
+	if num > max {
+		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
-	return b, nil
+	buf := new([5]byte)
+	val := num
+	i := 4
+	lastByte := 0
+	for ; i >= 0; i-- {
+		var base uint32
+		if i > 0 {
+			base = uint32(math.Pow(128, float64(i)))
+		} else {
+			base = 0
+		}
+		digit := byte(0x00)
+		if val >= base {
+			if base > 0 {
+				digit = byte(math.Floor(float64(val / base)))
+				val -= uint32(digit) * base
+			} else {
+				digit = byte(val)
+			}
+		}
+		buf[i] = digit
+	}
+
+	haveLastByte := false
+	for j := len(buf) - 1; j >= 0; j-- {
+		if !haveLastByte && buf[j] > 0x00 {
+			haveLastByte = true
+			lastByte = j
+		} else if haveLastByte {
+			buf[j] = buf[j] + MASK_MBI31
+		}
+	}
+
+	return writer.Write(buf[0 : lastByte+1])
 }
 
 func readString(reader *bytes.Reader) (string, error) {
