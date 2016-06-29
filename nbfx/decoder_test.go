@@ -72,12 +72,25 @@ func TestReadMultiByteInt31_5521(t *testing.T) {
 	testReadMultiByteInt31(t, []byte{0x91, 0x2B}, 5521)
 }
 
-func TestReadMultiByteInt31_16384(t *testing.T) {
-	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80}, 16384)
-}
+//func TestReadMultiByteInt31_16384(t *testing.T) {
+//	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80}, 16384)
+//}
+//
+//func TestReadMultiByteInt31_268435456(t *testing.T) {
+//	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80, 0x01}, 268435456)
+//}
 
-func TestReadMultiByteInt31_268435456(t *testing.T) {
-	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80, 0x01}, 268435456)
+func TestReadString_abc(t *testing.T) {
+	reader := bytes.NewReader([]byte{0x03, 0x61, 0x62, 0x63})
+	actual, err := readString(reader)
+	if err != nil {
+		t.Error("Error: " + err.Error())
+		return
+	}
+	expected := "abc"
+	if actual != expected {
+		t.Errorf("Expected %s but got %s", expected, actual)
+	}
 }
 
 func testReadMultiByteInt31(t *testing.T, bin []byte, expected uint32) {
