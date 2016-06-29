@@ -34,21 +34,114 @@ type attributeRecord struct{}
 func (r *attributeRecord) isElementStart() bool { return false }
 func (r *attributeRecord) isAttribute() bool    { return true }
 
+type textRecord struct{}
+
+func (r *textRecord) isElementStart() bool { return false }
+func (r *textRecord) isAttribute() bool    { return false }
+
 var records = map[byte]func(*codec) record{
-	0x43: func(codec *codec) record { return &dictionaryElementRecord{codec: codec} },
+	0x06: func(codec *codec) record { return &shortDictionaryAttributeRecord{codec: codec} },
 	0x0B: func(codec *codec) record { return &dictionaryXmlnsAttributeRecord{codec: codec} },
+	//0x0C-0x25: func(codec *codec) record { return &prefixDictionaryAttributeAZRecord{codec: codec, prefixIndex: 0x0C-0x25}}, ADDED IN init()
 	0x40: func(codec *codec) record { return &shortElementRecord{codec: codec} },
 	0x41: func(codec *codec) record { return &elementRecord{codec: codec} },
-	//0x44-0x5D: func(codec *codec) record { return &prefixDictionaryElementAZRecord{codec: codec, prefixIndex: 0x44-ox5D}}, ADDED IN init()
+	0x43: func(codec *codec) record { return &dictionaryElementRecord{codec: codec} },
+	//0x44-0x5D: func(codec *codec) record { return &prefixDictionaryElementAZRecord{codec: codec, prefixIndex: 0x44-0x5D}}, ADDED IN init()
 	//0x5E-0x77: func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: 0x5E-0x77}}, ADDED IN init()
+	0x82: func(codec *codec) record { return &oneTextRecord{codec: codec} },
+	0x99: func(codec *codec) record { return &chars8TextWithEndElementRecord{codec: codec} },
 }
 
 func init() {
 	for b := 0; b < 26; b++ {
 		byt := byte(b)
+		records[byte(0x0C+byt)] = func(codec *codec) record { return &prefixDictionaryAttributeAZRecord{codec: codec, prefixIndex: byt} }
 		records[byte(0x44+byt)] = func(codec *codec) record { return &prefixDictionaryElementAZRecord{codec: codec, prefixIndex: byt} }
 		records[byte(0x5E+byt)] = func(codec *codec) record { return &prefixElementAZRecord{codec: codec, prefixIndex: byt} }
 	}
+}
+
+//(0x06)
+type shortDictionaryAttributeRecord struct {
+	codec *codec
+	*attributeRecord
+	nameIndex uint32
+}
+
+func (r *shortDictionaryAttributeRecord) getName() string {
+	return "ShortDictionaryAttributeRecord (0x06)"
+}
+
+func (r *shortDictionaryAttributeRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return nil, errors.New("NotImplemented: shortDictionaryAttributeRecord.write")
+}
+
+func (r *shortDictionaryAttributeRecord) write(writer io.Writer) error {
+	return errors.New("NotImplemented: shortDictionaryAttributeRecord.write")
+}
+
+//0x99
+type chars8TextWithEndElementRecord struct {
+	codec *codec
+	*elementRecord
+	name string
+}
+
+func (r *chars8TextWithEndElementRecord) getName() string {
+	return "chars8TextWithEndElementRecord (0x99)"
+}
+
+func (r *chars8TextWithEndElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return nil, errors.New("NotImplemented: chars8TextWithEndElementRecord.read")
+}
+
+func (r *chars8TextWithEndElementRecord) write(writer io.Writer) error {
+	return errors.New("NotImplemented: chars8TextWithEndElementRecord.write")
+}
+
+//(0x82)
+type oneTextRecord struct {
+	*textRecord
+	codec *codec
+}
+
+func (r *oneTextRecord) getName() string {
+	return "OneText (0x82)"
+}
+
+func (r *oneTextRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	return "1", nil
+}
+
+func (r *oneTextRecord) write(writer io.Writer) error {
+	_, err := writer.Write([]byte("1"))
+	return err
+}
+
+//(0x0C-0x25)
+type prefixDictionaryAttributeAZRecord struct {
+	codec *codec
+	*attributeRecord
+	prefixIndex byte
+	nameIndex   uint32
+}
+
+func (r *prefixDictionaryAttributeAZRecord) getName() string {
+	return fmt.Sprintf("PrefixDictionaryAttribute%s (%#x)", string(byte('A')+r.prefixIndex), r.prefixIndex)
+}
+
+func (r *prefixDictionaryAttributeAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
+	name, err := readDictionaryString(reader, r.codec)
+	if err != nil {
+		return nil, err
+	}
+	return xml.Attr{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}, nil
+}
+
+func (r *prefixDictionaryAttributeAZRecord) write(writer io.Writer) error {
+	writer.Write([]byte{0x0C + r.prefixIndex})
+	_, err := writeMultiByteInt31(writer, r.nameIndex)
+	return err
 }
 
 //(0x44-0x5D)

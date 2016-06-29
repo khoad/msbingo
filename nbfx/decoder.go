@@ -77,8 +77,6 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	return xmlBuf.String(), nil
 }
 
-var MASK_MBI31 = byte(0x80)
-
 func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 	buf := new([5]byte)
 	keepReading := true
@@ -102,47 +100,6 @@ func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 		val += uint32(buf[i]) * uint32(math.Pow(128, float64(i)))
 	}
 	return val, nil
-}
-
-func writeMultiByteInt31(writer io.Writer, num uint32) (int, error) {
-	max := uint32(2147483647)
-	if num > max {
-		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
-	}
-	buf := new([5]byte)
-	val := num
-	i := 4
-	lastByte := 0
-	for ; i >= 0; i-- {
-		var base uint32
-		if i > 0 {
-			base = uint32(math.Pow(128, float64(i)))
-		} else {
-			base = 0
-		}
-		digit := byte(0x00)
-		if val >= base {
-			if base > 0 {
-				digit = byte(math.Floor(float64(val / base)))
-				val -= uint32(digit) * base
-			} else {
-				digit = byte(val)
-			}
-		}
-		buf[i] = digit
-	}
-
-	haveLastByte := false
-	for j := len(buf) - 1; j >= 0; j-- {
-		if !haveLastByte && buf[j] > 0x00 {
-			haveLastByte = true
-			lastByte = j
-		} else if haveLastByte {
-			buf[j] = buf[j] + MASK_MBI31
-		}
-	}
-
-	return writer.Write(buf[0 : lastByte+1])
 }
 
 func readString(reader *bytes.Reader) (string, error) {

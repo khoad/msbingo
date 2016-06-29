@@ -19,8 +19,8 @@ func TestDecodeExample1(t *testing.T) {
 	if err == nil {
 		t.Error("Expected err")
 		return
-	} else if err.Error() != "Unknown Record ID 0x44" {
-		t.Error("Expected Unknown Record ID 0x44 message but got " + err.Error())
+	} else {
+		t.Error(err.Error())
 		return
 	}
 }
@@ -46,6 +46,18 @@ func TestPrefixDictionaryElementBName(t *testing.T) {
 	} else if record.getName() != "PrefixDictionaryElementB (0x1)" {
 		t.Error("Expected PrefixDictionaryElementB (0x1) but got " + record.getName())
 	}
+}
+
+func TestDecodeOneText(t *testing.T) {
+	bin := []byte{0x82}
+
+	decoder := NewDecoder()
+	actual, err := decoder.Decode(bin)
+	if err != nil {
+		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
+		return
+	}
+	assertStringEqual(t, actual, "1")
 }
 
 func TestDecodePrefixDictionaryElementAZ(t *testing.T) {

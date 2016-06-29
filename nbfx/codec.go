@@ -20,3 +20,6 @@ func (c *codec) addDictionaryString(index uint32, value string) {
 	c.dict[index] = value
 	c.reverseDict[value] = index
 }
+
+// for MultiByteInt31
+var MASK_MBI31 = byte(0x80)
