@@ -4,6 +4,7 @@ import (
 	"testing"
 	//"io/ioutil"
 	"fmt"
+	"bytes"
 )
 
 //func TestEncodeExample1(t *testing.T) {
@@ -43,6 +44,40 @@ func TestEncodePrefixDictionaryElementS(t *testing.T) {
 		return
 	}
 	assertBinEqual(t, actual, []byte{0x56, 0x02})
+}
+
+func TestWriteMultiByteInt31_17(t *testing.T) {
+	testWriteMultiByteInt31(t, 17, []byte{0x11})
+}
+
+func TestWriteMultiByteInt31_145(t *testing.T) {
+	testWriteMultiByteInt31(t, 145, []byte{0x91, 0x01})
+}
+
+func TestWriteMultiByteInt31_5521(t *testing.T) {
+	testWriteMultiByteInt31(t, 5521, []byte{0x91, 0x2B})
+}
+
+func TestWriteMultiByteInt31_16384(t *testing.T) {
+	testWriteMultiByteInt31(t, 16384, []byte{0x80, 0x80, 0x01})
+}
+
+func TestWriteMultiByteInt31_268435456(t *testing.T) {
+	testWriteMultiByteInt31(t, 268435456, []byte{0x80, 0x80, 0x80, 0x01})
+}
+
+func testWriteMultiByteInt31(t *testing.T, num uint32, expected []byte) {
+	buffer := bytes.Buffer{}
+	i, err := writeMultiByteInt31(&buffer, num)
+	if err != nil {
+		t.Error("Error: " + err.Error())
+		return
+	}
+	if i != len(expected) {
+		t.Errorf("Expected to write %d byte/s but wrote %d", len(expected), i)
+		return
+	}
+	assertBinEqual(t, buffer.Bytes()[0:i], expected)
 }
 
 func assertBinEqual(t *testing.T, actual, expected []byte) {

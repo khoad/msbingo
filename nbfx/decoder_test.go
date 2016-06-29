@@ -3,6 +3,7 @@ package nbfx
 import (
 	//"io/ioutil"
 	"testing"
+	"bytes"
 )
 
 //https://golang.org/pkg/testing/
@@ -57,6 +58,39 @@ func TestDecodePrefixDictionaryElementAZ(t *testing.T) {
 		return
 	}
 	assertStringEqual(t, actual, "<s:str2>")
+}
+
+func TestReadMultiByteInt31_17(t *testing.T) {
+	testReadMultiByteInt31(t, []byte{0x11}, 17)
+}
+
+func TestReadMultiByteInt31_145(t *testing.T) {
+	testReadMultiByteInt31(t, []byte{0x91, 0x01}, 145)
+}
+
+func TestReadMultiByteInt31_5521(t *testing.T) {
+	testReadMultiByteInt31(t, []byte{0x91, 0x2B}, 5521)
+}
+
+func TestReadMultiByteInt31_16384(t *testing.T) {
+	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80}, 16384)
+}
+
+func TestReadMultiByteInt31_268435456(t *testing.T) {
+	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80, 0x01}, 268435456)
+}
+
+func testReadMultiByteInt31(t *testing.T, bin []byte, expected uint32) {
+	reader := bytes.NewReader(bin)
+	actual, err := readMultiByteInt31(reader)
+	if err != nil {
+		t.Error("Error: " + err.Error())
+		return
+	}
+	if actual != expected {
+		t.Errorf("Expected %d but got %d", expected, actual)
+		return
+	}
 }
 
 func assertStringEqual(t *testing.T, actual, expected string) {
