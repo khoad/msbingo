@@ -1,8 +1,8 @@
 package nbfs
 
 import (
-	"testing"
 	"io/ioutil"
+	"testing"
 )
 
 func TestDecodeExample1(t *testing.T) {

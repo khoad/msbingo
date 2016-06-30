@@ -3,7 +3,7 @@ package nbfx
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
+	//"errors"
 	"fmt"
 	"io"
 	"math"
@@ -31,55 +31,29 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	reader := bytes.NewReader(bin)
 	xmlBuf := &bytes.Buffer{}
 	xmlEncoder := xml.NewEncoder(xmlBuf)
-	b, err := reader.ReadByte()
-	var startingElement xml.StartElement
-	haveStartingElement := false
-	flushStartElement := func() {
-		if haveStartingElement {
-			xmlEncoder.EncodeToken(startingElement)
-		}
-		haveStartingElement = false
-		startingElement = xml.StartElement{}
-	}
-	initStartElement := func(tokens []xml.Token) {
-		flushStartElement()
-		haveStartingElement = true
-		startingElement = tokens[0].(xml.StartElement)
-	}
-	for err == nil {
-		record := getRecord(&d.codec, b)
-		if record == nil {
-			xmlEncoder.Flush()
-			return xmlBuf.String(), errors.New(fmt.Sprintf("Unknown Record ID %#x", b))
-		}
-		fmt.Println(record.getName())
-		var tokens []xml.Token
-		tokens, err = record.read(reader)
-		if err != nil {
-			xmlEncoder.Flush()
-			return xmlBuf.String(), err
-		}
-		if record.isElementStart() {
-			initStartElement(tokens)
+	record, err := readRecord(&d.codec, reader)
+	for err == nil && record != nil {
+		if record.isElement() {
+			fmt.Println("Processing element" + record.getName())
+			elementReader := record.(elementRecordReader)
+			record, err = elementReader.readElement(*xmlEncoder, reader)
 		} else if record.isAttribute() {
-			for i, t := range tokens {
-				fmt.Println(t)
-				if i == 0 {
-					startingElement.Attr = append(startingElement.Attr, t.(xml.Attr))
-				} else {
-					xmlEncoder.EncodeToken(t)
-				}
-			}
-		} else {
-			flushStartElement()
-			for _, t := range tokens {
-				xmlEncoder.EncodeToken(t)
-			}
+			attributeReader := record.(attributeRecordReader)
+			var attr xml.Attr
+			attr, _, err = attributeReader.readAttribute(*xmlEncoder, reader)
+			xmlEncoder.EncodeToken(attr)
+			record = nil
+		} else { // text record
+			textReader := record.(textRecordReader)
+			var text string
+			text, _, err = textReader.readText(*xmlEncoder, reader)
+			xmlEncoder.EncodeToken(xml.CharData(text))
+			record = nil
 		}
-
-		b, err = reader.ReadByte()
+		if err == nil && record == nil {
+			record, err = readRecord(&d.codec, reader)
+		}
 	}
-	flushStartElement()
 	xmlEncoder.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err
@@ -112,9 +86,8 @@ func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 	return val, nil
 }
 
-func readString(reader *bytes.Reader) (string, error) {
-	var len uint32
-	len, err := readMultiByteInt31(reader)
+func readStringBytes(reader *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
+	len, err := readLenFunc(reader)
 	if err != nil {
 		return "", err
 	}
@@ -128,4 +101,17 @@ func readString(reader *bytes.Reader) (string, error) {
 		i++
 	}
 	return strBuffer.String(), nil
+}
+
+func readString(reader *bytes.Reader) (string, error) {
+	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+		return readMultiByteInt31(r)
+	})
+}
+
+func readChars8Text(reader *bytes.Reader) (string, error) {
+	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+		len, err := reader.ReadByte()
+		return uint32(len), err
+	})
 }

@@ -2,7 +2,7 @@ package nbfx
 
 import (
 	"bytes"
-	"io/ioutil"
+	//"io/ioutil"
 	"testing"
 )
 
@@ -22,12 +22,11 @@ func TestDecodePrefixDictionaryElementB(t *testing.T) {
 
 func TestPrefixDictionaryElementBName(t *testing.T) {
 	codec := &codec{}
-	record := getRecord(codec, 0x45)
-	if record == nil {
-		t.Error("Expected record but received nil")
-		return
-	} else if record.getName() != "PrefixDictionaryElementB (0x1)" {
-		t.Error("Expected PrefixDictionaryElementB (0x1) but got " + record.getName())
+	reader := bytes.NewReader([]byte{byte(0x45)})
+
+	_, err := readRecord(codec, reader)
+	if err != nil {
+		t.Error(err.Error())
 	}
 }
 

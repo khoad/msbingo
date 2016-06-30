@@ -1,7 +1,7 @@
 package nbfx
 
 import (
-	"bytes"
+	//"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -28,22 +28,23 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 }
 
 func (e *encoder) Encode(xmlString string) ([]byte, error) {
-	reader := bytes.NewReader([]byte(xmlString))
-	binBuffer := &bytes.Buffer{}
-	xmlDecoder := xml.NewDecoder(reader)
-	token, err := xmlDecoder.RawToken()
-	for err == nil {
-		record := getRecordFromToken(&e.codec, token)
-		if record == nil {
-			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Unknown Token %s", token))
-		}
-		err = record.write(binBuffer)
-		if err != nil {
-			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
-		}
-		token, err = xmlDecoder.RawToken()
-	}
-	return binBuffer.Bytes(), nil
+	//reader := bytes.NewReader([]byte(xmlString))
+	//binBuffer := &bytes.Buffer{}
+	//xmlDecoder := xml.NewDecoder(reader)
+	//token, err := xmlDecoder.RawToken()
+	//for err == nil {
+	//	record := getRecordFromToken(&e.codec, token)
+	//	if record == nil {
+	//		return binBuffer.Bytes(), errors.New(fmt.Sprintf("Unknown Token %s", token))
+	//	}
+	//	err = record.writeElement(binBuffer)
+	//	if err != nil {
+	//		return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
+	//	}
+	//	token, err = xmlDecoder.RawToken()
+	//}
+	//return binBuffer.Bytes(), nil
+	return nil, errors.New("Restore this")
 }
 
 func getRecordFromToken(codec *codec, token xml.Token) record {
