@@ -8,21 +8,6 @@ import (
 
 //https://golang.org/pkg/testing/
 
-func TestDecodeExample1(t *testing.T) {
-	decoder := NewDecoder()
-	path := "../examples/1"
-	bin, err := ioutil.ReadFile(path + ".bin")
-	if failOn(err, "unable to open "+path+".bin", t) {
-		return
-	}
-	xml, err := decoder.Decode(bin)
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	t.Error("Not matching xml!!", xml)
-}
-
 func TestDecodePrefixDictionaryElementB(t *testing.T) {
 	bin := []byte{0x45, 0x02}
 

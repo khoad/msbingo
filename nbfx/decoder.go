@@ -59,12 +59,16 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			xmlEncoder.Flush()
 			return xmlBuf.String(), err
 		}
-		//fmt.Println("record", record == nil)
 		if record.isElementStart() {
 			initStartElement(tokens)
 		} else if record.isAttribute() {
-			for _, t := range tokens {
-				startingElement.Attr = append(startingElement.Attr, t.(xml.Attr))
+			for i, t := range tokens {
+				fmt.Println(t)
+				if i == 0 {
+					startingElement.Attr = append(startingElement.Attr, t.(xml.Attr))
+				} else {
+					xmlEncoder.EncodeToken(t)
+				}
 			}
 		} else {
 			flushStartElement()
