@@ -15,14 +15,12 @@ func TestDecodeExample1(t *testing.T) {
 	if failOn(err, "unable to open "+path+".bin", t) {
 		return
 	}
-	_, err = decoder.Decode(bin)
-	if err == nil {
-		t.Error("Expected err")
-		return
-	} else {
+	xml, err := decoder.Decode(bin)
+	if err != nil {
 		t.Error(err.Error())
 		return
 	}
+	t.Error("Not matching xml!!", xml)
 }
 
 func TestDecodePrefixDictionaryElementB(t *testing.T) {
