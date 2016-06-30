@@ -41,10 +41,10 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 		haveStartingElement = false
 		startingElement = xml.StartElement{}
 	}
-	initStartElement := func(token xml.Token) {
+	initStartElement := func(tokens []xml.Token) {
 		flushStartElement()
 		haveStartingElement = true
-		startingElement = token.(xml.StartElement)
+		startingElement = tokens[0].(xml.StartElement)
 	}
 	for err == nil {
 		record := getRecord(&d.codec, b)
@@ -52,19 +52,25 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			xmlEncoder.Flush()
 			return xmlBuf.String(), errors.New(fmt.Sprintf("Unknown Record ID %#x", b))
 		}
-		var token xml.Token
-		token, err = record.read(reader)
+		fmt.Println(record.getName())
+		var tokens []xml.Token
+		tokens, err = record.read(reader)
 		if err != nil {
 			xmlEncoder.Flush()
 			return xmlBuf.String(), err
 		}
+		//fmt.Println("record", record == nil)
 		if record.isElementStart() {
-			initStartElement(token)
+			initStartElement(tokens)
 		} else if record.isAttribute() {
-			startingElement.Attr = append(startingElement.Attr, token.(xml.Attr))
+			for _, t := range tokens {
+				startingElement.Attr = append(startingElement.Attr, t.(xml.Attr))
+			}
 		} else {
 			flushStartElement()
-			xmlEncoder.EncodeToken(token)
+			for _, t := range tokens {
+				xmlEncoder.EncodeToken(t)
+			}
 		}
 
 		b, err = reader.ReadByte()

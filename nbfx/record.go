@@ -12,7 +12,7 @@ type record interface {
 	isElementStart() bool
 	isAttribute() bool
 	getName() string
-	read(reader *bytes.Reader) (xml.Token, error)
+	read(reader *bytes.Reader) ([]xml.Token, error)
 	write(writer io.Writer) error
 }
 
@@ -72,8 +72,16 @@ func (r *shortDictionaryAttributeRecord) getName() string {
 	return "ShortDictionaryAttributeRecord (0x06)"
 }
 
-func (r *shortDictionaryAttributeRecord) read(reader *bytes.Reader) (xml.Token, error) {
-	return nil, errors.New("NotImplemented: shortDictionaryAttributeRecord.write")
+func (r *shortDictionaryAttributeRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
+	name, err := readDictionaryString(reader, r.codec)
+	if err != nil {
+		return nil, err
+	}
+	val, err := readString(reader)
+	if err != nil {
+		return nil, err
+	}
+	return []xml.Token{xml.Attr{Name: xml.Name{Local: name}, Value: val}}, nil
 }
 
 func (r *shortDictionaryAttributeRecord) write(writer io.Writer) error {
@@ -83,7 +91,7 @@ func (r *shortDictionaryAttributeRecord) write(writer io.Writer) error {
 //0x99
 type chars8TextWithEndElementRecord struct {
 	codec *codec
-	*elementRecord
+	*textRecord
 	name string
 }
 
@@ -91,8 +99,8 @@ func (r *chars8TextWithEndElementRecord) getName() string {
 	return "chars8TextWithEndElementRecord (0x99)"
 }
 
-func (r *chars8TextWithEndElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
-	return nil, errors.New("NotImplemented: chars8TextWithEndElementRecord.read")
+func (r *chars8TextWithEndElementRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
+	return []xml.Token{xml.CharData("1"), xml.EndElement{}}, nil
 }
 
 func (r *chars8TextWithEndElementRecord) write(writer io.Writer) error {
@@ -109,8 +117,8 @@ func (r *oneTextRecord) getName() string {
 	return "OneText (0x82)"
 }
 
-func (r *oneTextRecord) read(reader *bytes.Reader) (xml.Token, error) {
-	return "1", nil
+func (r *oneTextRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
+	return []xml.Token{xml.CharData("1")}, nil
 }
 
 func (r *oneTextRecord) write(writer io.Writer) error {
@@ -130,12 +138,12 @@ func (r *prefixDictionaryAttributeAZRecord) getName() string {
 	return fmt.Sprintf("PrefixDictionaryAttribute%s (%#x)", string(byte('A')+r.prefixIndex), r.prefixIndex)
 }
 
-func (r *prefixDictionaryAttributeAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *prefixDictionaryAttributeAZRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
 	}
-	return xml.Attr{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}, nil
+	return []xml.Token{xml.Attr{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}}, nil
 }
 
 func (r *prefixDictionaryAttributeAZRecord) write(writer io.Writer) error {
@@ -156,12 +164,12 @@ func (r *prefixDictionaryElementAZRecord) getName() string {
 	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A')+r.prefixIndex), r.prefixIndex)
 }
 
-func (r *prefixDictionaryElementAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *prefixDictionaryElementAZRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}, nil
+	return []xml.Token{xml.StartElement{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}}, nil
 }
 
 func (r *prefixDictionaryElementAZRecord) write(writer io.Writer) error {
@@ -182,12 +190,12 @@ func (r *dictionaryElementRecord) getName() string {
 	return "DictionaryElement (0x43)"
 }
 
-func (r *dictionaryElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *dictionaryElementRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	name, err := readDictionaryString(reader, r.codec)
 	if err != nil {
 		return nil, err
 	}
-	return xml.StartElement{Name: xml.Name{Local: name}}, nil
+	return []xml.Token{xml.StartElement{Name: xml.Name{Local: name}}}, nil
 }
 
 func (r *dictionaryElementRecord) write(writer io.Writer) error {
@@ -216,10 +224,10 @@ func (r *dictionaryXmlnsAttributeRecord) getName() string {
 	return "dictionaryXmlnsAttribute (0x0B)"
 }
 
-func (r *dictionaryXmlnsAttributeRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *dictionaryXmlnsAttributeRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	name, err := readString(reader)
 	if err != nil {
-		return name, err
+		return nil, err
 	}
 
 	val, err := readDictionaryString(reader, r.codec)
@@ -227,7 +235,7 @@ func (r *dictionaryXmlnsAttributeRecord) read(reader *bytes.Reader) (xml.Token, 
 		return nil, err
 	}
 
-	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
+	return []xml.Token{xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}}, nil
 }
 
 func (r *dictionaryXmlnsAttributeRecord) write(writer io.Writer) error {
@@ -245,7 +253,7 @@ func (r *shortElementRecord) getName() string {
 	return "shortElementRecord (0x40)"
 }
 
-func (r *shortElementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *shortElementRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	return nil, errors.New("NotImplemented: shortElementRecord.read")
 }
 
@@ -265,7 +273,7 @@ func (r *prefixElementAZRecord) getName() string {
 	return "prefixElementAZRecord (0x5E-0x77)"
 }
 
-func (r *prefixElementAZRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *prefixElementAZRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	return nil, errors.New("NotImplemented: prefixElementAZRecord.read")
 }
 
@@ -285,7 +293,7 @@ func (r *elementRecord) getName() string {
 	return "elementRecord (0x41)"
 }
 
-func (r *elementRecord) read(reader *bytes.Reader) (xml.Token, error) {
+func (r *elementRecord) read(reader *bytes.Reader) ([]xml.Token, error) {
 	return nil, errors.New("NotImplemented: elementRecord.read")
 }
 
