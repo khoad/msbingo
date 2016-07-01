@@ -11,6 +11,7 @@ import (
 
 type decoder struct {
 	codec codec
+	elementStack Stack
 }
 
 func NewDecoder() Decoder {
@@ -18,7 +19,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)}}
+	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)},Stack{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.codec.addDictionaryString(k, v)
@@ -31,13 +32,14 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	reader := bytes.NewReader(bin)
 	xmlBuf := &bytes.Buffer{}
 	xmlEncoder := xml.NewEncoder(xmlBuf)
-	record, err := readRecord(&d.codec, reader)
+	record, err := readRecord(d, reader)
 	for err == nil && record != nil {
 		if record.isElement() {
-			fmt.Println("Processing element" + record.getName())
+			fmt.Println("--Processing element " + record.getName())
 			elementReader := record.(elementRecordReader)
 			record, err = elementReader.readElement(*xmlEncoder, reader)
 		} else if record.isAttribute() {
+			fmt.Println("--Processing attribute " + record.getName())
 			attributeReader := record.(attributeRecordReader)
 			var attr xml.Attr
 			attr, _, err = attributeReader.readAttribute(*xmlEncoder, reader)
@@ -46,12 +48,12 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 		} else { // text record
 			textReader := record.(textRecordReader)
 			var text string
-			text, _, err = textReader.readText(*xmlEncoder, reader)
+			text, _, err = textReader.readText(reader)
 			xmlEncoder.EncodeToken(xml.CharData(text))
 			record = nil
 		}
 		if err == nil && record == nil {
-			record, err = readRecord(&d.codec, reader)
+			record, err = readRecord(d, reader)
 		}
 	}
 	xmlEncoder.Flush()
