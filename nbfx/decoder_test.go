@@ -25,7 +25,7 @@ func TestPrefixDictionaryElementBName(t *testing.T) {
 	decoder := &decoder{codec,Stack{}}
 	reader := bytes.NewReader([]byte{byte(0x45)})
 
-	_, err := readRecord(decoder, reader)
+	_, err := decodeRecord(decoder, reader)
 	if err != nil {
 		t.Error(err.Error())
 	}
