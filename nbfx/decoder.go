@@ -32,28 +32,29 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	reader := bytes.NewReader(bin)
 	xmlBuf := &bytes.Buffer{}
 	xmlEncoder := xml.NewEncoder(xmlBuf)
-	record, err := readRecord(d, reader)
-	for err == nil && record != nil {
-		if record.isElement() {
-			fmt.Println("--Processing element " + record.getName())
-			elementReader := record.(elementRecordReader)
-			record, err = elementReader.readElement(*xmlEncoder, reader)
-		} else if record.isAttribute() {
-			fmt.Println("--Processing attribute " + record.getName())
-			attributeReader := record.(attributeRecordReader)
+	rec, err := readRecord(d, reader)
+	for err == nil && rec != nil {
+		if rec.isElement() {
+			fmt.Println("--Processing element " + rec.getName())
+			elementReader := rec.(elementRecordReader)
+			rec, err = elementReader.readElement(*xmlEncoder, reader)
+		} else if rec.isAttribute() {
+			fmt.Println("--Processing attribute " + rec.getName())
+			attributeReader := rec.(attributeRecordReader)
 			var attr xml.Attr
-			attr, _, err = attributeReader.readAttribute(*xmlEncoder, reader)
+			attr, err = attributeReader.readAttribute(*xmlEncoder, reader)
 			xmlEncoder.EncodeToken(attr)
-			record = nil
+			rec = nil
 		} else { // text record
-			textReader := record.(textRecordReader)
+			textReader := rec.(textRecordReader)
+			fmt.Println("--Processing text " + textReader.getName())
 			var text string
-			text, _, err = textReader.readText(reader)
+			text, err = textReader.readText(*xmlEncoder, reader)
 			xmlEncoder.EncodeToken(xml.CharData(text))
-			record = nil
+			rec = nil
 		}
-		if err == nil && record == nil {
-			record, err = readRecord(d, reader)
+		if err == nil && rec == nil {
+			rec, err = readRecord(d, reader)
 		}
 	}
 	xmlEncoder.Flush()
