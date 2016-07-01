@@ -317,7 +317,7 @@ func (r *prefixDictionaryAttributeAZRecord) readAttribute(x xml.Encoder, reader 
 	if err != nil {
 		return xml.Attr{}, false, err
 	}
-	attrToken := xml.Attr{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}
+	attrToken := xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
 	record, err := readRecord(r.decoder, reader)
 	if err != nil {
 		return xml.Attr{}, false, err
@@ -357,7 +357,7 @@ func (r *prefixDictionaryElementAZRecord) readElement(x xml.Encoder, reader *byt
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}
+	element := xml.StartElement{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
 
 	return r.readElementAttributes(element, x, reader)
 }
@@ -468,7 +468,7 @@ func (r *prefixElementAZRecord) readElement(x xml.Encoder, reader *bytes.Reader)
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: string(byte('a'+byte(r.prefixIndex))) + ":" + name}}
+	element := xml.StartElement{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
 
 	return r.readElementAttributes(element, x, reader)
 }
