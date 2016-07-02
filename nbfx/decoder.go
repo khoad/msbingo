@@ -3,8 +3,6 @@ package nbfx
 import (
 	"bytes"
 	"encoding/xml"
-	//"errors"
-	"fmt"
 	"io"
 	"math"
 )
@@ -35,21 +33,18 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	rec, err := decodeRecord(d, reader)
 	for err == nil && rec != nil {
 		if rec.isElement() {
-			fmt.Println("--Processing element " + rec.getName())
 			elementReader := rec.(elementRecordDecoder)
-			rec, err = elementReader.decodeElement(*xmlEncoder, reader)
+			rec, err = elementReader.decodeElement(xmlEncoder, reader)
 		} else { // text record
 			textReader := rec.(textRecordDecoder)
-			fmt.Println("--xx--Processing text " + textReader.getName())
-			var text string
-			text, err = textReader.decodeText(*xmlEncoder, reader)
-			xmlEncoder.EncodeToken(xml.CharData(text))
+			_, err = textReader.decodeText(xmlEncoder, reader)
 			rec = nil
 		}
 		if err == nil && rec == nil {
 			rec, err = decodeRecord(d, reader)
 		}
 	}
+	//fmt.Println("Exiting main decoder loop...")
 	xmlEncoder.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err

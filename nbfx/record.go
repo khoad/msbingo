@@ -16,7 +16,7 @@ type record interface {
 
 type elementRecordDecoder interface {
 	record
-	decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error)
+	decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error)
 }
 
 type elementRecordWriter interface {
@@ -26,12 +26,13 @@ type elementRecordWriter interface {
 
 type attributeRecordDecoder interface {
 	record
-	decodeAttribute(x xml.Encoder, reader *bytes.Reader) (xml.Attr, error)
+	decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error)
 }
 
 type textRecordDecoder interface {
 	record
-	decodeText(x xml.Encoder, reader *bytes.Reader) (string, error)
+	decodeText(x *xml.Encoder, reader *bytes.Reader) (string, error)
+	readText(reader *bytes.Reader) (string, error)
 }
 
 func decodeRecord(decoder *decoder, reader *bytes.Reader) (record, error) {
@@ -41,9 +42,9 @@ func decodeRecord(decoder *decoder, reader *bytes.Reader) (record, error) {
 	}
 
 	if recordFunc, ok := records[b]; ok {
-		record := recordFunc(decoder)
+		rec := recordFunc(decoder)
 		//fmt.Println("record.getName()", record.getName())
-		return record, nil
+		return rec, nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("Unknown record %#x", b))
@@ -56,7 +57,7 @@ type elementRecordBase struct {
 func (r *elementRecordBase) isElement() bool   { return true }
 func (r *elementRecordBase) isAttribute() bool { return false }
 
-func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	// get next record
 	//fmt.Printf("getting next record")
 	rec, err := decodeRecord(r.decoder, reader)
@@ -66,18 +67,14 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x xm
 	var attributeToken xml.Attr
 	for rec != nil {
 		if err != nil {
-			//fmt.Println("Error getting next record", err.Error())
 			return nil, err
 		}
 
 		var attrReader attributeRecordDecoder
 		if rec.isAttribute() {
-			fmt.Println("--Processing attribute " + rec.getName())
-			//fmt.Print("record is attribute", record)
 			attrReader = rec.(attributeRecordDecoder)
 
 			attributeToken, err = attrReader.decodeAttribute(x, reader)
-			fmt.Printf("Attribute Name:%#v Value:%#v\n", attributeToken.Name, attributeToken.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -85,21 +82,18 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x xm
 
 			rec, err = decodeRecord(r.decoder, reader)
 		} else {
-			//fmt.Print("record is NOT attribute", record)
 			attrReader = nil
 			peekRecord = rec
 			rec = nil
 		}
 	}
 
-	//fmt.Printf("Encoding element %s", element)
 	err = x.EncodeToken(element)
 	if err != nil {
 		return nil, err
 	}
 
 	r.decoder.elementStack.Push(element)
-	fmt.Println("Pushed ", element.Name)
 
 	return peekRecord, nil
 }
@@ -126,17 +120,25 @@ func (r *textRecordBase) getName() string {
 	return fmt.Sprintf("%s (%#x)", r.textName, r.recordId)
 }
 
-func (r *textRecordBase) decodeText(x xml.Encoder, reader *bytes.Reader) (string, error) {
+func (r *textRecordBase) readText(reader *bytes.Reader) (string, error) {
 	text, err := r.charData(reader)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("Read text", text, "withEndElement", r.withEndElement)
+	return text, nil
+}
+
+func (r *textRecordBase) decodeText(x *xml.Encoder, reader *bytes.Reader) (string, error) {
+	text, err := r.readText(reader)
+	if err != nil {
+		return "", err
+	}
+	charData := xml.CharData([]byte(text))
+	x.EncodeToken(charData)
 	if r.withEndElement {
 		rec, err := decodeRecord(r.decoder, bytes.NewReader([]byte{0x01}))
 		endElementReader := rec.(elementRecordDecoder)
 		if err == nil {
-			fmt.Printf("Closing with withEndElement bool in readText\n")
 			endElementReader.decodeElement(x, nil)
 		}
 	}
@@ -193,11 +195,11 @@ func (r *endElementRecord) getName() string {
 	return "EndElementRecord (0x01)"
 }
 
-func (r *endElementRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *endElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	item := r.decoder.elementStack.Pop()
 	element := item.(xml.StartElement)
-	fmt.Println("Popped ", element.Name)
-	err := x.EncodeToken(xml.EndElement{Name:element.Name})
+	endElementToken := xml.EndElement{Name:xml.Name{Local:element.Name.Local,Space:element.Name.Space}}
+	err := x.EncodeToken(endElementToken)
 	return nil, err
 }
 
@@ -215,7 +217,7 @@ func (r *shortDictionaryAttributeRecord) getName() string {
 	return "ShortDictionaryAttributeRecord (0x06)"
 }
 
-func (r *shortDictionaryAttributeRecord) decodeAttribute(x xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+func (r *shortDictionaryAttributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
 	name, err := readDictionaryString(reader, r.decoder)
 	if err != nil {
 		return xml.Attr{}, err
@@ -225,7 +227,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x xml.Encoder, reader *
 		return xml.Attr{}, err
 	}
 	textReader := record.(textRecordDecoder)
-	text, err := textReader.decodeText(x, reader)
+	text, err := textReader.readText(reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}
@@ -243,7 +245,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x xml.Encoder, reader *
 //	return "chars8TextWithEndElementRecord (0x99)"
 //}
 //
-//func (r *chars8TextWithEndElementRecord) read(x xml.Encoder, reader *bytes.Reader) (record, error) {
+//func (r *chars8TextWithEndElementRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 //	text, err := readString(reader)
 //	if err != nil {
 //		return nil, err
@@ -271,7 +273,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x xml.Encoder, reader *
 //	return "ZeroText (0x80-81)"
 //}
 //
-//func (r *zeroTextRecord) read(x xml.Encoder, reader *bytes.Reader) (record, error) {
+//func (r *zeroTextRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 //	err := x.EncodeToken(xml.CharData("0"))
 //	if err != nil {
 //		return nil, err
@@ -297,7 +299,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x xml.Encoder, reader *
 //	return "OneText (0x82)"
 //}
 //
-//func (r *oneTextRecord) read(x xml.Encoder, reader *bytes.Reader) (record, error) {
+//func (r *oneTextRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 //	err := x.EncodeToken(xml.CharData("1"))
 //
 //	if r.withEndElement {
@@ -322,7 +324,7 @@ func (r *prefixDictionaryAttributeAZRecord) getName() string {
 	return fmt.Sprintf("PrefixDictionaryAttributeAZRecord (%#x)", byte(0x0C+r.prefixIndex))
 }
 
-func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
 	name, err := readDictionaryString(reader, r.decoder)
 	if err != nil {
 		return xml.Attr{}, err
@@ -336,7 +338,7 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x xml.Encoder, reade
 	if textRecord == nil {
 		return xml.Attr{}, errors.New("Expected TextRecord")
 	}
-	text, err := textRecord.decodeText(x, reader)
+	text, err := textRecord.readText(reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}
@@ -362,7 +364,7 @@ func (r *prefixDictionaryElementAZRecord) getName() string {
 	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A')+r.prefixIndex), 0x44+r.prefixIndex)
 }
 
-func (r *prefixDictionaryElementAZRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *prefixDictionaryElementAZRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	name, err := readDictionaryString(reader, r.decoder)
 	if err != nil {
 		return nil, err
@@ -389,7 +391,7 @@ func (r *dictionaryElementRecord) getName() string {
 	return "DictionaryElement (0x43)"
 }
 
-func (r *dictionaryElementRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *dictionaryElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	name, err := readDictionaryString(reader, r.decoder)
 	if err != nil {
 		return nil, err
@@ -420,7 +422,7 @@ func (r *dictionaryXmlnsAttributeRecord) getName() string {
 	return "dictionaryXmlnsAttribute (0x0B)"
 }
 
-func (r *dictionaryXmlnsAttributeRecord) decodeAttribute(x xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+func (r *dictionaryXmlnsAttributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
 	name, err := readString(reader)
 	if err != nil {
 		return xml.Attr{}, err
@@ -448,7 +450,7 @@ func (r *shortElementRecord) getName() string {
 	return "shortElementRecord (0x40)"
 }
 
-func (r *shortElementRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *shortElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	name, err := readString(reader)
 	if err != nil {
 		return nil, err
@@ -473,7 +475,7 @@ func (r *prefixElementAZRecord) getName() string {
 	return fmt.Sprintf("PrefixElementAZRecord (%#x)", r.prefixIndex+0x5E)
 }
 
-func (r *prefixElementAZRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *prefixElementAZRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	name, err := readString(reader)
 	if err != nil {
 		return nil, err
@@ -498,7 +500,7 @@ func (r *elementRecord) getName() string {
 	return "elementRecord (0x41)"
 }
 
-func (r *elementRecord) decodeElement(x xml.Encoder, reader *bytes.Reader) (record, error) {
+func (r *elementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	prefix, err := readString(reader)
 	if err != nil {
 		return nil, err

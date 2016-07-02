@@ -23,7 +23,7 @@ func TestDecodeExample1(t *testing.T) {
 		return
 	}
 	if expected != actual {
-		t.Error(actual + "\nnot equal to expected\n" + expected)
+		t.Error("actual\n" + actual + "\nnot equal to expected\n" + expected)
 	}
 	assertEqual(t, actual, expected)
 }
