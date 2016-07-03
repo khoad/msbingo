@@ -105,12 +105,12 @@ func writeMultiByteInt31(writer io.Writer, num uint32) (int, error) {
 	if num > max {
 		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
-	if num < 128 {
+	if num < MASK_MBI31 {
 		return writer.Write([]byte{byte(num)})
 	}
-	q := num / 128
-	rem := num % 128
-	n1, err := writer.Write([]byte{byte(128 + rem)})
+	q := num / MASK_MBI31
+	rem := num % MASK_MBI31
+	n1, err := writer.Write([]byte{byte(MASK_MBI31 + rem)})
 	if err != nil {
 		return n1, err
 	}

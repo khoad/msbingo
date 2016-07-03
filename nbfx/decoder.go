@@ -7,7 +7,7 @@ import (
 )
 
 type decoder struct {
-	codec codec
+	codec        codec
 	elementStack Stack
 }
 
@@ -16,7 +16,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)},Stack{}}
+	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)}, Stack{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.codec.addDictionaryString(k, v)
@@ -53,11 +53,11 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 
 func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
 	b, err := reader.ReadByte()
-	if b < byte(128) {
+	if uint32(b) < MASK_MBI31 {
 		return uint32(b), err
 	}
 	nextB, err := readMultiByteInt31(reader)
-	return uint32(128*nextB + uint32(b-128)), err
+	return MASK_MBI31*(nextB-1) + uint32(b), err
 }
 
 func readStringBytes(reader *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
