@@ -30,7 +30,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	reader := bytes.NewReader(bin)
 	xmlBuf := &bytes.Buffer{}
 	xmlEncoder := xml.NewEncoder(xmlBuf)
-	rec, err := decodeRecord(d, reader)
+	rec, err := getNextRecord(d, reader)
 	for err == nil && rec != nil {
 		if rec.isElement() {
 			elementReader := rec.(elementRecordDecoder)
@@ -41,7 +41,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			rec = nil
 		}
 		if err == nil && rec == nil {
-			rec, err = decodeRecord(d, reader)
+			rec, err = getNextRecord(d, reader)
 		}
 	}
 	//fmt.Println("Exiting main decoder loop...")

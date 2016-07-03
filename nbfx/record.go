@@ -35,7 +35,7 @@ type textRecordDecoder interface {
 	readText(reader *bytes.Reader) (string, error)
 }
 
-func decodeRecord(decoder *decoder, reader *bytes.Reader) (record, error) {
+func getNextRecord(decoder *decoder, reader *bytes.Reader) (record, error) {
 	b, err := reader.ReadByte()
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (r *elementRecordBase) isAttribute() bool { return false }
 func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	// get next record
 	//fmt.Printf("getting next record")
-	rec, err := decodeRecord(r.decoder, reader)
+	rec, err := getNextRecord(r.decoder, reader)
 
 	var peekRecord record
 
@@ -80,7 +80,7 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *x
 			}
 			element.Attr = append(element.Attr, attributeToken)
 
-			rec, err = decodeRecord(r.decoder, reader)
+			rec, err = getNextRecord(r.decoder, reader)
 		} else {
 			attrReader = nil
 			peekRecord = rec
@@ -136,7 +136,7 @@ func (r *textRecordBase) decodeText(x *xml.Encoder, reader *bytes.Reader) (strin
 	charData := xml.CharData([]byte(text))
 	x.EncodeToken(charData)
 	if r.withEndElement {
-		rec, err := decodeRecord(r.decoder, bytes.NewReader([]byte{0x01}))
+		rec, err := getNextRecord(r.decoder, bytes.NewReader([]byte{0x01}))
 		endElementReader := rec.(elementRecordDecoder)
 		if err == nil {
 			endElementReader.decodeElement(x, nil)
@@ -222,7 +222,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x *xml.Encoder, reader 
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	record, err := decodeRecord(r.decoder, reader)
+	record, err := getNextRecord(r.decoder, reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}
@@ -233,85 +233,6 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x *xml.Encoder, reader 
 	}
 	return xml.Attr{Name: xml.Name{Local: name}, Value: text}, nil
 }
-
-////0x99
-//type chars8TextWithEndElementRecord struct {
-//	decoder *decoder
-//	*textRecord
-//	name string
-//}
-//
-//func (r *chars8TextWithEndElementRecord) getName() string {
-//	return "chars8TextWithEndElementRecord (0x99)"
-//}
-//
-//func (r *chars8TextWithEndElementRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
-//	text, err := readString(reader)
-//	if err != nil {
-//		return nil, err
-//	}
-//	err = x.EncodeToken(xml.CharData(text))
-//	if err != nil {
-//		return nil, err
-//	}
-//	err = x.EncodeToken(xml.EndElement{})
-//	return nil, err
-//}
-//
-//func (r *chars8TextWithEndElementRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: chars8TextWithEndElementRecord.write")
-//}
-
-//
-////(0x80-81)
-//type zeroTextRecord struct {
-//	decoder *decoder
-//	*textRecord
-//}
-//
-//func (r *zeroTextRecord) getName() string {
-//	return "ZeroText (0x80-81)"
-//}
-//
-//func (r *zeroTextRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
-//	err := x.EncodeToken(xml.CharData("0"))
-//	if err != nil {
-//		return nil, err
-//	}
-//	if r.withEndElement {
-//		err = x.EncodeToken(xml.EndElement{})
-//	}
-//	return nil, err
-//}
-//
-//func (r *zeroTextRecord) write(writer io.Writer) error {
-//	_, err := writer.Write([]byte("0"))
-//	return err
-//}
-
-////(0x82-83)
-//type oneTextRecord struct {
-//	*textRecord
-//	decoder *decoder
-//}
-//
-//func (r *oneTextRecord) getName() string {
-//	return "OneText (0x82)"
-//}
-//
-//func (r *oneTextRecord) read(x *xml.Encoder, reader *bytes.Reader) (record, error) {
-//	err := x.EncodeToken(xml.CharData("1"))
-//
-//	if r.withEndElement {
-//
-//	}
-//	return nil, err
-//}
-//
-//func (r *oneTextRecord) write(writer io.Writer) error {
-//	_, err := writer.Write([]byte("1"))
-//	return err
-//}
 
 //(0x0C-0x25)
 type prefixDictionaryAttributeAZRecord struct {
@@ -330,7 +251,7 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x *xml.Encoder, read
 		return xml.Attr{}, err
 	}
 	attrToken := xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
-	record, err := decodeRecord(r.decoder, reader)
+	record, err := getNextRecord(r.decoder, reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}

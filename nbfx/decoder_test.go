@@ -8,51 +8,24 @@ import (
 
 //https://golang.org/pkg/testing/
 
-func TestDecodePrefixDictionaryElementB(t *testing.T) {
-	bin := []byte{0x45, 0x02}
-
-	decoder := NewDecoder()
-	actual, err := decoder.Decode(bin)
-	if err != nil {
-		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
-		return
-	}
-	assertStringEqual(t, actual, "<b:str2>")
+func TestDecodeExampleEndElement(t *testing.T) {
+	testDecode(t, []byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x01}, "<doc></doc>")
 }
 
-func TestPrefixDictionaryElementBName(t *testing.T) {
-	codec := codec{}
-	decoder := &decoder{codec,Stack{}}
-	reader := bytes.NewReader([]byte{byte(0x45)})
+func TestDecodeExampleComment(t *testing.T) {
+	testDecode(t, []byte{0x02, 0x07, 0x63, 0x6F, 0x6D, 0x6D, 0x65, 0x6E, 0x74}, "<!--comment-->")
+}
 
-	_, err := decodeRecord(decoder, reader)
-	if err != nil {
-		t.Error(err.Error())
-	}
+func TestDecodePrefixDictionaryElementB(t *testing.T) {
+	testDecode(t, []byte{0x45, 0x02}, "<b:str2>")
 }
 
 func TestDecodeOneText(t *testing.T) {
-	bin := []byte{0x82}
-
-	decoder := NewDecoder()
-	actual, err := decoder.Decode(bin)
-	if err != nil {
-		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
-		return
-	}
-	assertStringEqual(t, actual, "1")
+	testDecode(t, []byte{0x82}, "1")
 }
 
 func TestDecodePrefixDictionaryElementAZ(t *testing.T) {
-	bin := []byte{0x56, 0x02}
-
-	decoder := NewDecoder()
-	actual, err := decoder.Decode(bin)
-	if err != nil {
-		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
-		return
-	}
-	assertStringEqual(t, actual, "<s:str2>")
+	testDecode(t, []byte{0x56, 0x02}, "<s:str2>")
 }
 
 func TestReadMultiByteInt31_17(t *testing.T) {
@@ -90,6 +63,15 @@ func TestReadString_abc(t *testing.T) {
 	if actual != expected {
 		t.Errorf("Expected %s but got %s", expected, actual)
 	}
+}
+
+func testDecode(t *testing.T, bin []byte, expected string) {
+	decoder := NewDecoder()
+	actual, err := decoder.Decode(bin)
+	if err != nil {
+		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
+	}
+	assertStringEqual(t, actual, expected)
 }
 
 func testReadMultiByteInt31(t *testing.T, bin []byte, expected uint32) {
