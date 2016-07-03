@@ -1,12 +1,10 @@
 package nbfx
 
 import (
-	//"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
-	"math"
 )
 
 type encoder struct {
@@ -107,38 +105,15 @@ func writeMultiByteInt31(writer io.Writer, num uint32) (int, error) {
 	if num > max {
 		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
-	buf := new([5]byte)
-	val := num
-	i := 4
-	lastByte := 0
-	for ; i >= 0; i-- {
-		var base uint32
-		if i > 0 {
-			base = uint32(math.Pow(128, float64(i)))
-		} else {
-			base = 0
-		}
-		digit := byte(0x00)
-		if val >= base {
-			if base > 0 {
-				digit = byte(math.Floor(float64(val / base)))
-				val -= uint32(digit) * base
-			} else {
-				digit = byte(val)
-			}
-		}
-		buf[i] = digit
+	if num < 128 {
+		return writer.Write([]byte{byte(num)})
 	}
-
-	haveLastByte := false
-	for j := len(buf) - 1; j >= 0; j-- {
-		if !haveLastByte && buf[j] > 0x00 {
-			haveLastByte = true
-			lastByte = j
-		} else if haveLastByte {
-			buf[j] = buf[j] + MASK_MBI31
-		}
+	q := num / 128
+	rem := num % 128
+	n1, err := writer.Write([]byte{byte(128 + rem)})
+	if err != nil {
+		return n1, err
 	}
-
-	return writer.Write(buf[0 : lastByte+1])
+	n2, err := writeMultiByteInt31(writer, q)
+	return n1 + n2, err
 }
