@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
-	"math"
 )
 
 type decoder struct {
@@ -53,28 +52,12 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 }
 
 func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
-	buf := new([5]byte)
-	keepReading := true
-	i := -1
-	for keepReading {
-		i++
-		b, err := reader.ReadByte()
-		if err != nil {
-			return 0, err
-		}
-		if b >= MASK_MBI31 {
-			b -= MASK_MBI31
-			keepReading = true
-		} else {
-			keepReading = false
-		}
-		buf[i] = b
+	b, err := reader.ReadByte()
+	if b < byte(128) {
+		return uint32(b), err
 	}
-	var val uint32
-	for ; i >= 0; i-- {
-		val += uint32(buf[i]) * uint32(math.Pow(128, float64(i)))
-	}
-	return val, nil
+	nextB, err := readMultiByteInt31(reader)
+	return uint32(128*nextB + uint32(b-128)), err
 }
 
 func readStringBytes(reader *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
