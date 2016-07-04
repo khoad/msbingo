@@ -22,4 +22,4 @@ func (c *codec) addDictionaryString(index uint32, value string) {
 }
 
 // for MultiByteInt31
-var MASK_MBI31 = byte(0x80)
+const MASK_MBI31 = uint32(0x80) //0x80 = 128

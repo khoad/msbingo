@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
-	"math"
 )
 
 type decoder struct {
-	codec codec
+	codec        codec
 	elementStack Stack
 }
 
@@ -17,7 +16,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)},Stack{}}
+	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)}, Stack{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.codec.addDictionaryString(k, v)
@@ -53,28 +52,12 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 }
 
 func readMultiByteInt31(reader *bytes.Reader) (uint32, error) {
-	buf := new([5]byte)
-	keepReading := true
-	i := -1
-	for keepReading {
-		i++
-		b, err := reader.ReadByte()
-		if err != nil {
-			return 0, err
-		}
-		if b >= MASK_MBI31 {
-			b -= MASK_MBI31
-			keepReading = true
-		} else {
-			keepReading = false
-		}
-		buf[i] = b
+	b, err := reader.ReadByte()
+	if uint32(b) < MASK_MBI31 {
+		return uint32(b), err
 	}
-	var val uint32
-	for ; i >= 0; i-- {
-		val += uint32(buf[i]) * uint32(math.Pow(128, float64(i)))
-	}
-	return val, nil
+	nextB, err := readMultiByteInt31(reader)
+	return MASK_MBI31*(nextB-1) + uint32(b), err
 }
 
 func readStringBytes(reader *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
