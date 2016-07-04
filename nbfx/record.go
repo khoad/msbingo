@@ -147,6 +147,8 @@ func (r *textRecordBase) decodeText(x *xml.Encoder, reader *bytes.Reader) (strin
 
 var records = map[byte]func(*decoder) record{
 	0x01: func(decoder *decoder) record { return &endElementRecord{&elementRecordBase{decoder: decoder}} },
+	0x02: func(decoder *decoder) record { return &commentRecord{&textRecordBase{decoder: decoder}, ""} },
+	0x03: func(decoder *decoder) record { return &arrayRecord{&elementRecordBase{decoder: decoder}} },
 	0x06: func(decoder *decoder) record { return &shortDictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}, 0} },
 	0x0B: func(decoder *decoder) record { return &dictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
 	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN init()
@@ -183,6 +185,7 @@ func init() {
 	}
 	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
 	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
+	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
 	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
 }
 
@@ -323,15 +326,14 @@ func (r *dictionaryElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Re
 }
 
 func readDictionaryString(reader *bytes.Reader, decoder *decoder) (string, error) {
-	b, err := reader.ReadByte()
+	key, err := readMultiByteInt31(reader)
 	if err != nil {
 		return "", err
 	}
-	key := uint32(b)
 	if val, ok := decoder.codec.dict[key]; ok {
 		return val, nil
 	}
-	return fmt.Sprintf("str%d", b), nil
+	return fmt.Sprintf("str%d", key), nil
 }
 
 //(0x0B)
@@ -436,5 +438,83 @@ func (r *elementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (rec
 }
 
 //func (r *elementRecord) write(writer io.Writer) error {
+//	return errors.New("NotImplemented: elementRecord.write")
+//}
+
+// 0x02
+type commentRecord struct {
+	*textRecordBase
+	text   string
+}
+
+func (r *commentRecord) getName() string {
+	return "commentRecord (0x02)"
+}
+
+func (r *commentRecord) decodeText(x *xml.Encoder, reader *bytes.Reader) (string, error) {
+	text, err := readString(reader)
+	if err != nil {
+		return "", err
+	}
+	element := xml.Comment(text)
+
+	err = x.EncodeToken(element)
+	if err != nil {
+		return "", err
+	}
+	return text, nil
+}
+
+//func (r *commentRecord) write(writer io.Writer) error {
+//	return errors.New("NotImplemented: elementRecord.write")
+//}
+
+// 0x03
+type arrayRecord struct {
+	*elementRecordBase
+}
+
+func (r *arrayRecord) getName() string {
+	return "arrayRecord (0x03)"
+}
+
+func (r *arrayRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
+	rec, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return rec, err
+	}
+	if !rec.isElement() {
+		return nil, errors.New("Element expected!")
+	}
+	elementDecoder := rec.(elementRecordDecoder)
+	rec, err = elementDecoder.decodeElement(x, reader)
+	if err != nil {
+		return rec, err
+	}
+	valRec, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return valRec, err
+	}
+	valDecoder := valRec.(textRecordDecoder)
+	len, err := readMultiByteInt31(reader)
+	if err != nil {
+		return nil, err
+	}
+	var i uint32
+	for i = 0; i < len; i++ {
+		_, err = valDecoder.decodeText(x, reader)
+		if err != nil {
+			return nil, err
+		}
+	}
+	endElementDecoder := records[0x01](r.decoder).(elementRecordDecoder)
+	rec, err = endElementDecoder.decodeElement(x, reader)
+	if err != nil {
+		return nil, err
+	}
+	return rec, nil
+}
+
+//func (r *arrayRecord) write(writer io.Writer) error {
 //	return errors.New("NotImplemented: elementRecord.write")
 //}
