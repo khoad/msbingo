@@ -85,6 +85,9 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *x
 			element.Attr = append(element.Attr, attributeToken)
 
 			rec, err = getNextRecord(r.decoder, reader)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			attrReader = nil
 			peekRecord = rec
@@ -155,7 +158,9 @@ var records = map[byte]func(*decoder) record{
 	0x02: func(decoder *decoder) record { return &commentRecord{&textRecordBase{decoder: decoder}, ""} },
 	0x03: func(decoder *decoder) record { return &arrayRecord{&elementRecordBase{decoder: decoder}} },
 	0x04: func(decoder *decoder) record { return &shortAttributeRecord{&attributeRecordBase{decoder: decoder}} },
+	0x05: func(decoder *decoder) record { return &attributeRecord{&attributeRecordBase{decoder: decoder}} },
 	0x06: func(decoder *decoder) record { return &shortDictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}, 0} },
+	0x09: func(decoder *decoder) record { return &xmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
 	0x0B: func(decoder *decoder) record { return &dictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
 	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN init()
 	0x40: func(decoder *decoder) record { return &shortElementRecord{&elementRecordBase{decoder: decoder}, ""} },
@@ -238,6 +243,36 @@ func (r *shortAttributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Rea
 	return xml.Attr{Name: xml.Name{Local: name}, Value: text}, nil
 }
 
+//(0x05)
+type attributeRecord struct {
+	*attributeRecordBase
+}
+
+func (r *attributeRecord) getName() string {
+	return "AttributeRecord (0x05)"
+}
+
+func (r *attributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+	prefix, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	name, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	rec, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	textReader := rec.(textRecordDecoder)
+	text, err := textReader.readText(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	return xml.Attr{Name: xml.Name{Local: prefix + ":" + name}, Value: text}, nil
+}
+
 //(0x06)
 type shortDictionaryAttributeRecord struct {
 	*attributeRecordBase
@@ -253,16 +288,38 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(x *xml.Encoder, reader 
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	record, err := getNextRecord(r.decoder, reader)
+	rec, err := getNextRecord(r.decoder, reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	textReader := record.(textRecordDecoder)
+	textReader := rec.(textRecordDecoder)
 	text, err := textReader.readText(reader)
 	if err != nil {
 		return xml.Attr{}, err
 	}
 	return xml.Attr{Name: xml.Name{Local: name}, Value: text}, nil
+}
+
+//(0x09)
+type xmlnsAttributeRecord struct {
+	*attributeRecordBase
+}
+
+func (r *xmlnsAttributeRecord) getName() string {
+	return "XmlnsAttributeRecord (0x09)"
+}
+
+func (r *xmlnsAttributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+	prefix := "xmlns"
+	name, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	val, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	return xml.Attr{Name: xml.Name{Local: prefix + ":" + name}, Value: val}, nil
 }
 
 //(0x0C-0x25)
