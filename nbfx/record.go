@@ -188,6 +188,7 @@ func initRecords() {
 	addTextRecord(0x88, "Int8Text", func(reader *bytes.Reader) (string, error) { return readInt8Text(reader) })
 	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
 	addTextRecord(0x8C, "Int32Text", func(reader *bytes.Reader) (string, error) { return readInt32Text(reader) })
+	addTextRecord(0x8E, "Int64Text", func(reader *bytes.Reader) (string, error) { return readInt64Text(reader) })
 	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
 	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
 

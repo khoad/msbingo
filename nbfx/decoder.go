@@ -142,6 +142,17 @@ func readInt32Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
+func readInt64Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 8)
+	if err != nil {
+		return "", err
+	}
+	var val int64
+	binary.Read(buf, binary.LittleEndian, &val)
+	return fmt.Sprintf("%d", val), nil
+}
+
 func readDoubleText(reader *bytes.Reader) (string, error) {
 	var err error
 	buf, err := readBytes(reader, 8)
