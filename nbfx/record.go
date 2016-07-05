@@ -186,6 +186,7 @@ func init() {
 	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
 	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
 	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
+	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
 	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
 }
 
@@ -501,18 +502,29 @@ func (r *arrayRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (recor
 		return nil, err
 	}
 	var i uint32
+	var startElement xml.StartElement
 	for i = 0; i < len; i++ {
+		//fmt.Println("LOOP", r.decoder.elementStack.top.value)
+		if i == 0 {
+			startElement = r.decoder.elementStack.top.value.(xml.StartElement)
+		} else {
+			err = x.EncodeToken(startElement)
+			if err != nil {
+				return nil, err
+			}
+			r.decoder.elementStack.Push(startElement)
+		}
+		//fmt.Println("DecodeText", r.decoder.elementStack.top.value)
 		_, err = valDecoder.decodeText(x, reader)
+		//fmt.Println("DecodeText2", r.decoder.elementStack.top.value)
 		if err != nil {
 			return nil, err
 		}
+		if i < len {
+			r.decoder.elementStack.Push(startElement)
+		}
 	}
-	endElementDecoder := records[0x01](r.decoder).(elementRecordDecoder)
-	rec, err = endElementDecoder.decodeElement(x, reader)
-	if err != nil {
-		return nil, err
-	}
-	return rec, nil
+	return nil, nil
 }
 
 //func (r *arrayRecord) write(writer io.Writer) error {

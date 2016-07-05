@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
+	"fmt"
+	"encoding/binary"
 )
 
 type decoder struct {
@@ -88,4 +90,42 @@ func readChars8Text(reader *bytes.Reader) (string, error) {
 		len, err := reader.ReadByte()
 		return uint32(len), err
 	})
+}
+
+func readBytes(reader *bytes.Reader, numBytes int) (*bytes.Buffer, error) {
+	var err error
+	buf := &bytes.Buffer{}
+	for i := 0; i < numBytes && err == nil; i++ {
+		b, err := reader.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		buf.WriteByte(b)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return buf, nil
+}
+
+func readInt8Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 1)
+	if err != nil {
+		return "", err
+	}
+	var val byte
+	binary.Read(buf, binary.LittleEndian, &val)
+	return fmt.Sprintf("%d", val), nil
+}
+
+func readInt16Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 2)
+	if err != nil {
+		return "", err
+	}
+	var val int16
+	binary.Read(buf, binary.LittleEndian, &val)
+	return fmt.Sprintf("%d", val), nil
 }
