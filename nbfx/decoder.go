@@ -115,7 +115,7 @@ func readInt8Text(reader *bytes.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var val byte
+	var val int8
 	binary.Read(buf, binary.LittleEndian, &val)
 	return fmt.Sprintf("%d", val), nil
 }
