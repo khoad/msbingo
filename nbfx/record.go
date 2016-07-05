@@ -176,6 +176,7 @@ func initRecords() {
 	// Element Record
 	records[0x40] = func(decoder *decoder) record { return &shortElementRecord{&elementRecordBase{decoder: decoder}, ""} }
 	records[0x41] = func(decoder *decoder) record { return &elementRecord{&elementRecordBase{decoder: decoder}, "", ""} }
+	records[0x42] = func(decoder *decoder) record { return &shortDictionaryElementRecord{&elementRecordBase{decoder: decoder}} }
 	records[0x43] = func(decoder *decoder) record { return &dictionaryElementRecord{&elementRecordBase{decoder: decoder}, 0, ""} }
 	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN addAzRecords()
 	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN addAzRecords()
@@ -499,6 +500,25 @@ func (r *prefixDictionaryElementAZRecord) write(writer io.Writer) error {
 	writer.Write([]byte{0x44 + r.prefixIndex})
 	_, err := writeMultiByteInt31(writer, r.nameIndex)
 	return err
+}
+
+//(0x42)
+type shortDictionaryElementRecord struct {
+	*elementRecordBase
+}
+
+func (r *shortDictionaryElementRecord) getName() string {
+	return "ShortDictionaryElement (0x42)"
+}
+
+func (r *shortDictionaryElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
+	name, err := readDictionaryString(reader, r.decoder)
+	if err != nil {
+		return nil, err
+	}
+	element := xml.StartElement{Name: xml.Name{Local: name}}
+
+	return r.readElementAttributes(element, x, reader)
 }
 
 //(0x43)
