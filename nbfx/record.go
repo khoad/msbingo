@@ -533,11 +533,15 @@ func (r *dictionaryElementRecord) getName() string {
 }
 
 func (r *dictionaryElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (record, error) {
+	prefix, err := readString(reader)
+	if err != nil {
+		return nil, err
+	}
 	name, err := readDictionaryString(reader, r.decoder)
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: name}}
+	element := xml.StartElement{Name: xml.Name{Local: prefix + ":" + name}}
 
 	return r.readElementAttributes(element, x, reader)
 }
