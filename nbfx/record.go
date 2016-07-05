@@ -187,6 +187,7 @@ func init() {
 	for b := 0; b < 26; b++ {
 		byt := byte(b)
 		records[byte(0x0C+byt)] = func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{&attributeRecordBase{decoder: decoder}, byt, 0} }
+		records[byte(0x26+byt)] = func(decoder *decoder) record { return &prefixAttributeAZRecord{&attributeRecordBase{decoder: decoder}, byt} }
 		records[byte(0x44+byt)] = func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{&elementRecordBase{decoder: decoder}, byt, 0} }
 		records[byte(0x5E+byt)] = func(decoder *decoder) record { return &prefixElementAZRecord{&elementRecordBase{decoder: decoder}, "", byt} }
 	}
@@ -407,7 +408,6 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x *xml.Encoder, read
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	attrToken := xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
 	record, err := getNextRecord(r.decoder, reader)
 	if err != nil {
 		return xml.Attr{}, err
@@ -420,8 +420,37 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(x *xml.Encoder, read
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	attrToken.Value = text
-	return attrToken, nil
+	return xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}, Value: text}, nil
+}
+
+//(0x26-0x3F)
+type prefixAttributeAZRecord struct {
+	*attributeRecordBase
+	prefixIndex byte
+}
+
+func (r *prefixAttributeAZRecord) getName() string {
+	return fmt.Sprintf("PrefixAttributeAZRecord (%#x)", byte(0x26+r.prefixIndex))
+}
+
+func (r *prefixAttributeAZRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+	name, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	record, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	textRecord := record.(textRecordDecoder)
+	if textRecord == nil {
+		return xml.Attr{}, errors.New("Expected TextRecord")
+	}
+	text, err := textRecord.readText(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	return xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}, Value: text}, nil
 }
 
 //
