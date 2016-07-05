@@ -153,25 +153,42 @@ func (r *textRecordBase) decodeText(x *xml.Encoder, reader *bytes.Reader) (strin
 	return text, nil
 }
 
-var records = map[byte]func(*decoder) record{
-	0x01: func(decoder *decoder) record { return &endElementRecord{&elementRecordBase{decoder: decoder}} },
-	0x02: func(decoder *decoder) record { return &commentRecord{&textRecordBase{decoder: decoder}, ""} },
-	0x03: func(decoder *decoder) record { return &arrayRecord{&elementRecordBase{decoder: decoder}} },
-	0x04: func(decoder *decoder) record { return &shortAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x05: func(decoder *decoder) record { return &attributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x06: func(decoder *decoder) record { return &shortDictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}, 0} },
-	0x07: func(decoder *decoder) record { return &dictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x08: func(decoder *decoder) record { return &shortXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x09: func(decoder *decoder) record { return &xmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x0A: func(decoder *decoder) record { return &shortDictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	0x0B: func(decoder *decoder) record { return &dictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
-	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN init()
-	0x40: func(decoder *decoder) record { return &shortElementRecord{&elementRecordBase{decoder: decoder}, ""} },
-	0x41: func(decoder *decoder) record { return &elementRecord{&elementRecordBase{decoder: decoder}, "", ""} },
-	0x43: func(decoder *decoder) record { return &dictionaryElementRecord{&elementRecordBase{decoder: decoder}, 0, ""} },
-	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN init()
-	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN init()
-	//0x80-0xBD: func(decoder *decoder) record { return &*TextRecord[WithEndElement]{decoder: decoder}}, ADDED IN init()
+var records = map[byte]func(*decoder) record{}
+
+func initRecords() {
+	// Miscellaneous Records
+	records[0x01] = func(decoder *decoder) record { return &endElementRecord{&elementRecordBase{decoder: decoder}} }
+	records[0x02] = func(decoder *decoder) record { return &commentRecord{&textRecordBase{decoder: decoder}, ""} }
+	records[0x03] = func(decoder *decoder) record { return &arrayRecord{&elementRecordBase{decoder: decoder}} }
+
+	// Attribute Records
+	records[0x04] = func(decoder *decoder) record { return &shortAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x05] = func(decoder *decoder) record { return &attributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x06] = func(decoder *decoder) record { return &shortDictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}, 0} }
+	records[0x07] = func(decoder *decoder) record { return &dictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x08] = func(decoder *decoder) record { return &shortXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x09] = func(decoder *decoder) record { return &xmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x0A] = func(decoder *decoder) record { return &shortDictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	records[0x0B] = func(decoder *decoder) record { return &dictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} }
+	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN addAzRecords()
+	//0x26-0x3F: func(decoder *decoder) record { return &prefixAttributeAZRecord{decoder: decoder, prefixIndex: 0x2626-0x3F}}, ADDED IN addAzRecords()
+
+	// Element Record
+	records[0x40] = func(decoder *decoder) record { return &shortElementRecord{&elementRecordBase{decoder: decoder}, ""} }
+	records[0x41] = func(decoder *decoder) record { return &elementRecord{&elementRecordBase{decoder: decoder}, "", ""} }
+	records[0x43] = func(decoder *decoder) record { return &dictionaryElementRecord{&elementRecordBase{decoder: decoder}, 0, ""} }
+	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN addAzRecords()
+	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN addAzRecords()
+
+	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
+	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
+	addTextRecord(0x84, "FalseText", func(reader *bytes.Reader) (string, error) { return "false", nil })
+	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
+	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
+	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
+	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
+
+	addAzRecords()
 }
 
 func addTextRecord(recordId byte, textName string, charData func(*bytes.Reader) (string, error)) {
@@ -183,7 +200,7 @@ func addTextRecord(recordId byte, textName string, charData func(*bytes.Reader) 
 	}
 }
 
-func init() {
+func addAzRecords() {
 	for b := 0; b < 26; b++ {
 		byt := byte(b)
 		records[byte(0x0C+byt)] = func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{&attributeRecordBase{decoder: decoder}, byt, 0} }
@@ -191,13 +208,10 @@ func init() {
 		records[byte(0x44+byt)] = func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{&elementRecordBase{decoder: decoder}, byt, 0} }
 		records[byte(0x5E+byt)] = func(decoder *decoder) record { return &prefixElementAZRecord{&elementRecordBase{decoder: decoder}, "", byt} }
 	}
-	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
-	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
-	addTextRecord(0x84, "FalseText", func(reader *bytes.Reader) (string, error) { return "false", nil })
-	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
-	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
-	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
-	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
+}
+
+func init() {
+	initRecords()
 }
 
 //(0x01)
