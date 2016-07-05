@@ -154,6 +154,7 @@ var records = map[byte]func(*decoder) record{
 	0x01: func(decoder *decoder) record { return &endElementRecord{&elementRecordBase{decoder: decoder}} },
 	0x02: func(decoder *decoder) record { return &commentRecord{&textRecordBase{decoder: decoder}, ""} },
 	0x03: func(decoder *decoder) record { return &arrayRecord{&elementRecordBase{decoder: decoder}} },
+	0x04: func(decoder *decoder) record { return &shortAttributeRecord{&attributeRecordBase{decoder: decoder}} },
 	0x06: func(decoder *decoder) record { return &shortDictionaryAttributeRecord{&attributeRecordBase{decoder: decoder}, 0} },
 	0x0B: func(decoder *decoder) record { return &dictionaryXmlnsAttributeRecord{&attributeRecordBase{decoder: decoder}} },
 	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN init()
@@ -162,12 +163,7 @@ var records = map[byte]func(*decoder) record{
 	0x43: func(decoder *decoder) record { return &dictionaryElementRecord{&elementRecordBase{decoder: decoder}, 0, ""} },
 	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN init()
 	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN init()
-	//0x80: func(decoder *decoder) record {
-	//	return &textRecord{decoder: decoder, withEndElement: false, textName: "ZeroText", recordId: 0x80, charData: "0"}
-	//},
-	//0x81: func(decoder *decoder) record { return &zeroTextRecord{decoder: decoder, withEndElement: true} },
-	//0x82: func(decoder *decoder) record { return &oneTextRecord{decoder: decoder} },
-	//0x99: func(decoder *decoder) record { return &chars8TextWithEndElementRecord{decoder: decoder} },
+	//0x80-0xBD: func(decoder *decoder) record { return &*TextRecord[WithEndElement]{decoder: decoder}}, ADDED IN init()
 }
 
 func addTextRecord(recordId byte, textName string, charData func(*bytes.Reader) (string, error)) {
@@ -183,13 +179,12 @@ func init() {
 	for b := 0; b < 26; b++ {
 		byt := byte(b)
 		records[byte(0x0C+byt)] = func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{&attributeRecordBase{decoder: decoder}, byt, 0} }
-		records[byte(0x44+byt)] = func(decoder *decoder) record {
-			return &prefixDictionaryElementAZRecord{&elementRecordBase{decoder: decoder}, byt, 0}
-		}
+		records[byte(0x44+byt)] = func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{&elementRecordBase{decoder: decoder}, byt, 0} }
 		records[byte(0x5E+byt)] = func(decoder *decoder) record { return &prefixElementAZRecord{&elementRecordBase{decoder: decoder}, "", byt} }
 	}
 	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
 	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
+	addTextRecord(0x84, "FalseText", func(reader *bytes.Reader) (string, error) { return "false", nil })
 	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
 	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
 	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
@@ -215,6 +210,32 @@ func (r *endElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Reader) (
 
 func (r *endElementRecord) write(writer io.Writer) error {
 	return errors.New("NotImplemented: endElementRecord.write")
+}
+
+//(0x04)
+type shortAttributeRecord struct {
+	*attributeRecordBase
+}
+
+func (r *shortAttributeRecord) getName() string {
+	return "ShortAttributeRecord (0x04)"
+}
+
+func (r *shortAttributeRecord) decodeAttribute(x *xml.Encoder, reader *bytes.Reader) (xml.Attr, error) {
+	name, err := readString(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	record, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	textReader := record.(textRecordDecoder)
+	text, err := textReader.readText(reader)
+	if err != nil {
+		return xml.Attr{}, err
+	}
+	return xml.Attr{Name: xml.Name{Local: name}, Value: text}, nil
 }
 
 //(0x06)
