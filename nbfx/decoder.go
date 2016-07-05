@@ -37,6 +37,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			elementReader := rec.(elementRecordDecoder)
 			rec, err = elementReader.decodeElement(xmlEncoder, reader)
 		} else { // text record
+			//fmt.Println("Expecting Text Record and got", rec.getName())
 			textReader := rec.(textRecordDecoder)
 			_, err = textReader.decodeText(xmlEncoder, reader)
 			rec = nil
@@ -128,4 +129,15 @@ func readInt16Text(reader *bytes.Reader) (string, error) {
 	var val int16
 	binary.Read(buf, binary.LittleEndian, &val)
 	return fmt.Sprintf("%d", val), nil
+}
+
+func readDoubleText(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 8)
+	if err != nil {
+		return "", err
+	}
+	var val float64
+	binary.Read(buf, binary.LittleEndian, &val)
+	return fmt.Sprintf("%v", val), nil
 }

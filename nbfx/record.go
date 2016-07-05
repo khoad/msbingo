@@ -59,13 +59,17 @@ func (r *elementRecordBase) isAttribute() bool { return false }
 
 func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *xml.Encoder, reader *bytes.Reader) (record, error) {
 	// get next record
-	//fmt.Printf("getting next record")
+	//fmt.Println("getting next record")
 	rec, err := getNextRecord(r.decoder, reader)
+	if err != nil {
+		return nil, err
+	}
 
 	var peekRecord record
 
 	var attributeToken xml.Attr
 	for rec != nil {
+		//fmt.Println("Processing record", rec.getName())
 		if err != nil {
 			return nil, err
 		}
@@ -87,6 +91,7 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *x
 			rec = nil
 		}
 	}
+	//fmt.Println("got next record", peekRecord, err)
 
 	err = x.EncodeToken(element)
 	if err != nil {
@@ -187,6 +192,7 @@ func init() {
 	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
 	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
 	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
+	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
 	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
 }
 
