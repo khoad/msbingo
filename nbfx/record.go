@@ -181,6 +181,7 @@ func initRecords() {
 	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN addAzRecords()
 	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN addAzRecords()
 
+	// Text Records
 	addTextRecord(0x80, "ZeroText", func(r *bytes.Reader, d *decoder) (string, error) { return "0", nil })
 	addTextRecord(0x82, "OneText", func(r *bytes.Reader, d *decoder) (string, error) { return "1", nil })
 	addTextRecord(0x84, "FalseText", func(r *bytes.Reader, d *decoder) (string, error) { return "false", nil })
