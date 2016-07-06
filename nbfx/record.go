@@ -118,7 +118,7 @@ type textRecordBase struct {
 	withEndElement bool
 	textName       string
 	recordId       byte
-	charData       func(*bytes.Reader) (string, error)
+	charData       func(*bytes.Reader, *decoder) (string, error)
 }
 
 func (r *textRecordBase) isElement() bool   { return false }
@@ -129,7 +129,7 @@ func (r *textRecordBase) getName() string {
 }
 
 func (r *textRecordBase) readText(reader *bytes.Reader) (string, error) {
-	text, err := r.charData(reader)
+	text, err := r.charData(reader, r.decoder)
 	if err != nil {
 		return "", err
 	}
@@ -181,30 +181,31 @@ func initRecords() {
 	//0x44-0x5D: func(decoder *decoder) record { return &prefixDictionaryElementAZRecord{decoder: decoder, prefixIndex: 0x44-0x5D}}, ADDED IN addAzRecords()
 	//0x5E-0x77: func(decoder *decoder) record { return &prefixElementAZRecord{decoder: decoder, prefixIndex: 0x5E-0x77}}, ADDED IN addAzRecords()
 
-	addTextRecord(0x80, "ZeroText", func(reader *bytes.Reader) (string, error) { return "0", nil })
-	addTextRecord(0x82, "OneText", func(reader *bytes.Reader) (string, error) { return "1", nil })
-	addTextRecord(0x84, "FalseText", func(reader *bytes.Reader) (string, error) { return "false", nil })
-	addTextRecord(0x86, "TrueText", func(reader *bytes.Reader) (string, error) { return "true", nil})
-	addTextRecord(0x88, "Int8Text", func(reader *bytes.Reader) (string, error) { return readInt8Text(reader) })
-	addTextRecord(0x8A, "Int16Text", func(reader *bytes.Reader) (string, error) { return readInt16Text(reader) })
-	addTextRecord(0x8C, "Int32Text", func(reader *bytes.Reader) (string, error) { return readInt32Text(reader) })
-	addTextRecord(0x8E, "Int64Text", func(reader *bytes.Reader) (string, error) { return readInt64Text(reader) })
-	addTextRecord(0x90, "FloatText", func(reader *bytes.Reader) (string, error) { return readFloatText(reader) })
-	addTextRecord(0x92, "DoubleText", func(reader *bytes.Reader) (string, error) { return readDoubleText(reader) })
-	addTextRecord(0x98, "Chars8Text", func(reader *bytes.Reader) (string, error) { return readChars8Text(reader) })
-	addTextRecord(0x9A, "Chars16Text", func(reader *bytes.Reader) (string, error) { return readChars16Text(reader) })
-	addTextRecord(0x9C, "Chars32Text", func(reader *bytes.Reader) (string, error) { return readChars32Text(reader) })
-	addTextRecord(0x9E, "Bytes8Text", func(reader *bytes.Reader) (string, error) { return readBytes8Text(reader) })
-	addTextRecord(0xA0, "Bytes16Text", func(reader *bytes.Reader) (string, error) { return readBytes16Text(reader) })
-	addTextRecord(0xA2, "Bytes32Text", func(reader *bytes.Reader) (string, error) { return readBytes32Text(reader) })
-	//addTextRecord(0xA4, "StartListText", func(reader *bytes.Reader) (string, error) { return readListText(reader) })
-	//addTextRecord(0xA6, "EndListText", func(reader *bytes.Reader) (string, error) { return "", nil })
-	addTextRecord(0xA8, "EmptyText", func(reader *bytes.Reader) (string, error) { return "", nil })
+	addTextRecord(0x80, "ZeroText", func(r *bytes.Reader, d *decoder) (string, error) { return "0", nil })
+	addTextRecord(0x82, "OneText", func(r *bytes.Reader, d *decoder) (string, error) { return "1", nil })
+	addTextRecord(0x84, "FalseText", func(r *bytes.Reader, d *decoder) (string, error) { return "false", nil })
+	addTextRecord(0x86, "TrueText", func(r *bytes.Reader, d *decoder) (string, error) { return "true", nil})
+	addTextRecord(0x88, "Int8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt8Text(r) })
+	addTextRecord(0x8A, "Int16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt16Text(r) })
+	addTextRecord(0x8C, "Int32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt32Text(r) })
+	addTextRecord(0x8E, "Int64Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt64Text(r) })
+	addTextRecord(0x90, "FloatText", func(r *bytes.Reader, d *decoder) (string, error) { return readFloatText(r) })
+	addTextRecord(0x92, "DoubleText", func(r *bytes.Reader, d *decoder) (string, error) { return readDoubleText(r) })
+	addTextRecord(0x98, "Chars8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars8Text(r) })
+	addTextRecord(0x9A, "Chars16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars16Text(r) })
+	addTextRecord(0x9C, "Chars32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars32Text(r) })
+	addTextRecord(0x9E, "Bytes8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes8Text(r) })
+	addTextRecord(0xA0, "Bytes16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes16Text(r) })
+	addTextRecord(0xA2, "Bytes32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes32Text(r) })
+	//addTextRecord(0xA4, "StartListText", func(r *bytes.Reader, d *decoder) (string, error) { return readListText(r) })
+	//addTextRecord(0xA6, "EndListText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
+	addTextRecord(0xA8, "EmptyText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
+	addTextRecord(0xAA, "DictionaryText", func(r *bytes.Reader, d *decoder) (string, error) { return readDictionaryString(r, d) })
 
 	addAzRecords()
 }
 
-func addTextRecord(recordId byte, textName string, charData func(*bytes.Reader) (string, error)) {
+func addTextRecord(recordId byte, textName string, charData func(*bytes.Reader, *decoder) (string, error)) {
 	records[recordId] = func(decoder *decoder) record {
 		return &textRecordBase{decoder: decoder, withEndElement: false, textName: textName, recordId: recordId, charData: charData}
 	}
