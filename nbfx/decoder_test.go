@@ -2,8 +2,9 @@ package nbfx
 
 import (
 	"bytes"
-	//"io/ioutil"
+	"encoding/binary"
 	"testing"
+	"math"
 )
 
 //https://golang.org/pkg/testing/
@@ -546,17 +547,40 @@ func TestReadMultiByteInt31_268435456(t *testing.T) {
 	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80, 0x80, 0x01}, 268435456)
 }
 
-func TestReadString_abc(t *testing.T) {
-	reader := bytes.NewReader([]byte{0x03, 0x61, 0x62, 0x63})
-	actual, err := readString(reader)
+func TestReadFloatTextSpecialValues(t *testing.T) {
+	testReadFloatTextSpecialValue(t, float32(math.Inf(1)), "INF")
+	testReadFloatTextSpecialValue(t, float32(math.Inf(-1)), "-INF")
+	testReadFloatTextSpecialValue(t, float32(math.NaN()), "NaN")
+	testReadFloatTextSpecialValue(t, float32(math.Copysign(0, -1)), "-0")
+}
+
+func TestReadDoubleTextSpecialValues(t *testing.T) {
+	testReadDoubleTextSpecialValue(t, math.Inf(1), "INF")
+	testReadDoubleTextSpecialValue(t, math.Inf(-1), "-INF")
+	testReadDoubleTextSpecialValue(t, math.NaN(), "NaN")
+	testReadDoubleTextSpecialValue(t, math.Copysign(0, -1), "-0")
+}
+
+func testReadFloatTextSpecialValue(t *testing.T, num float32, expected string) {
+	buf := &bytes.Buffer{}
+	binary.Write(buf, binary.LittleEndian, &num)
+	r := bytes.NewReader(buf.Bytes())
+	actual, err := readFloatText(r)
 	if err != nil {
-		t.Error("Error: " + err.Error())
-		return
+		t.Error(err.Error())
 	}
-	expected := "abc"
-	if actual != expected {
-		t.Errorf("Expected %s but got %s", expected, actual)
+	assertStringEqual(t, actual, expected)
+}
+
+func testReadDoubleTextSpecialValue(t *testing.T, num float64, expected string) {
+	buf := &bytes.Buffer{}
+	binary.Write(buf, binary.LittleEndian, &num)
+	r := bytes.NewReader(buf.Bytes())
+	actual, err := readDoubleText(r)
+	if err != nil {
+		t.Error(err.Error())
 	}
+	assertStringEqual(t, actual, expected)
 }
 
 func testDecode(t *testing.T, bin []byte, expected string) {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"fmt"
 	"encoding/binary"
+	"math"
 )
 
 type decoder struct {
@@ -153,6 +154,22 @@ func readInt64Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
+func readFloatText(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 8)
+	if err != nil {
+		return "", err
+	}
+	var val float32
+	binary.Read(buf, binary.LittleEndian, &val)
+	if val == float32(math.Inf(1)) {
+		return "INF", nil
+	} else if val == float32(math.Inf(-1)) {
+		return "-INF", nil
+	}
+	return fmt.Sprintf("%d", val), nil
+}
+
 func readDoubleText(reader *bytes.Reader) (string, error) {
 	var err error
 	buf, err := readBytes(reader, 8)
@@ -161,5 +178,10 @@ func readDoubleText(reader *bytes.Reader) (string, error) {
 	}
 	var val float64
 	binary.Read(buf, binary.LittleEndian, &val)
+	if val == math.Inf(1) {
+		return "INF", nil
+	} else if val == math.Inf(-1) {
+		return "-INF", nil
+	}
 	return fmt.Sprintf("%v", val), nil
 }
