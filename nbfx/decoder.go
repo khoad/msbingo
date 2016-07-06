@@ -120,6 +120,21 @@ func readBytes16Text(reader *bytes.Reader) (string, error) {
 	return b64.EncodeToString(buf.Bytes()), err
 }
 
+func readBytes32Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 4)
+	if err != nil {
+		return "", err
+	}
+	var val uint32
+	err = binary.Read(buf, binary.LittleEndian, &val)
+	if err != nil {
+		return "", err
+	}
+	buf, err = readBytes(reader, val)
+	return b64.EncodeToString(buf.Bytes()), err
+}
+
 func readChars8Text(reader *bytes.Reader) (string, error) {
 	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
 		var err error
