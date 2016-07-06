@@ -11,6 +11,7 @@ import (
 	"errors"
 	"strings"
 	//"time"
+	//"github.com/nu7hatch/gouuid"
 )
 
 type decoder struct {
@@ -306,4 +307,19 @@ func readDateTime(reader *bytes.Reader) (string, error) {
 	//time := time.Time(timeUint)
 	//time.
 	return "", errors.New("NotImplemented: DateTimeText")
+}
+
+func readUniqueIdText(reader *bytes.Reader) (string, error) {
+	//var err error
+	//buf, err := readBytes(reader, 16)
+	//if err != nil {
+	//	return "", err
+	//}
+	//val, err := uuid.Parse(buf.Bytes())
+	//if err != nil {
+	//	return "", err
+	//}
+	//val.setVariant(uuid.ReservedRFC4122)
+	//return fmt.Sprintf("%s", val.String()), nil
+	return "", errors.New("NotImplemented: UniqueIdText")
 }

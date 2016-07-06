@@ -205,6 +205,7 @@ func initRecords() {
 	addTextRecord(0xA6, "EndListText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
 	addTextRecord(0xA8, "EmptyText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
 	addTextRecord(0xAA, "DictionaryText", func(r *bytes.Reader, d *decoder) (string, error) { return readDictionaryString(r, d) })
+	addTextRecord(0xAC, "UniqueIdText", func(r *bytes.Reader, d *decoder) (string, error) { return readUniqueIdText(r) })
 
 	addAzRecords()
 }
