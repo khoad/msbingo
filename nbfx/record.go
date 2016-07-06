@@ -210,6 +210,9 @@ func initRecords() {
 	addTextRecord(0xB0, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUuidText(r) })
 	addTextRecord(0xB2, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUInt64Text(r) })
 	addTextRecord(0xB4, "BoolText", func(r *bytes.Reader, d *decoder) (string, error) { return readBoolText(r) })
+	addTextRecord(0xB6, "UnicodeChars8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars8Text(r) })
+	addTextRecord(0xB8, "UnicodeChars16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars16Text(r) })
+	addTextRecord(0xBA, "UnicodeChars32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars32Text(r) })
 
 	addAzRecords()
 }
