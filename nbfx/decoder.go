@@ -89,8 +89,40 @@ func readString(reader *bytes.Reader) (string, error) {
 
 func readChars8Text(reader *bytes.Reader) (string, error) {
 	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
-		len, err := reader.ReadByte()
-		return uint32(len), err
+		var err error
+		buf, err := readBytes(reader, 1)
+		if err != nil {
+			return uint32(0), err
+		}
+		var val uint8
+		binary.Read(buf, binary.LittleEndian, &val)
+		return uint32(val), err
+	})
+}
+
+func readChars16Text(reader *bytes.Reader) (string, error) {
+	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+		var err error
+		buf, err := readBytes(reader, 2)
+		if err != nil {
+			return uint32(0), err
+		}
+		var val uint16
+		binary.Read(buf, binary.LittleEndian, &val)
+		return uint32(val), err
+	})
+}
+
+func readChars32Text(reader *bytes.Reader) (string, error) {
+	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+		var err error
+		buf, err := readBytes(reader, 4)
+		if err != nil {
+			return uint32(0), err
+		}
+		var val uint32
+		binary.Read(buf, binary.LittleEndian, &val)
+		return uint32(val), err
 	})
 }
 

@@ -547,6 +547,10 @@ func TestReadMultiByteInt31_268435456(t *testing.T) {
 	testReadMultiByteInt31(t, []byte{0x80, 0x80, 0x80, 0x80, 0x01}, 268435456)
 }
 
+func TestCharsEscaping(t *testing.T) {
+	t.Error("Not Implemented: Chars Escaping")
+}
+
 func TestReadFloatTextSpecialValues(t *testing.T) {
 	testReadFloatTextSpecialValue(t, float32(math.Inf(1)), "INF")
 	testReadFloatTextSpecialValue(t, float32(math.Inf(-1)), "-INF")
