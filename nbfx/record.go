@@ -197,6 +197,9 @@ func initRecords() {
 	addTextRecord(0x9E, "Bytes8Text", func(reader *bytes.Reader) (string, error) { return readBytes8Text(reader) })
 	addTextRecord(0xA0, "Bytes16Text", func(reader *bytes.Reader) (string, error) { return readBytes16Text(reader) })
 	addTextRecord(0xA2, "Bytes32Text", func(reader *bytes.Reader) (string, error) { return readBytes32Text(reader) })
+	//addTextRecord(0xA4, "StartListText", func(reader *bytes.Reader) (string, error) { return readListText(reader) })
+	//addTextRecord(0xA6, "EndListText", func(reader *bytes.Reader) (string, error) { return "", nil })
+	addTextRecord(0xA8, "EmptyText", func(reader *bytes.Reader) (string, error) { return "", nil })
 
 	addAzRecords()
 }
