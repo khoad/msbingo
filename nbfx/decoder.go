@@ -101,7 +101,22 @@ func readBytes8Text(reader *bytes.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	buf, err = readBytes(reader, int(val))
+	buf, err = readBytes(reader, uint32(val))
+	return b64.EncodeToString(buf.Bytes()), err
+}
+
+func readBytes16Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 2)
+	if err != nil {
+		return "", err
+	}
+	var val uint16
+	err = binary.Read(buf, binary.LittleEndian, &val)
+	if err != nil {
+		return "", err
+	}
+	buf, err = readBytes(reader, uint32(val))
 	return b64.EncodeToString(buf.Bytes()), err
 }
 
@@ -144,10 +159,11 @@ func readChars32Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readBytes(reader *bytes.Reader, numBytes int) (*bytes.Buffer, error) {
+func readBytes(reader *bytes.Reader, numBytes uint32) (*bytes.Buffer, error) {
 	var err error
 	buf := &bytes.Buffer{}
-	for i := 0; i < numBytes && err == nil; i++ {
+	var i uint32
+	for i = 0; i < numBytes && err == nil; i++ {
 		b, err := reader.ReadByte()
 		if err != nil {
 			return nil, err
