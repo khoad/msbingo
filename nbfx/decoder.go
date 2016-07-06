@@ -239,6 +239,17 @@ func readInt64Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
+func readUInt64Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 8)
+	if err != nil {
+		return "", err
+	}
+	var val uint64
+	binary.Read(buf, binary.LittleEndian, &val)
+	return fmt.Sprintf("%d", val), nil
+}
+
 func readFloatText(reader *bytes.Reader) (string, error) {
 	var err error
 	buf, err := readBytes(reader, 4)
@@ -294,7 +305,11 @@ func readListText(reader *bytes.Reader, d *decoder) (string, error) {
 	return strings.Join(items, " "), nil
 }
 
-func readDateTime(reader *bytes.Reader) (string, error) {
+func readDecimalText(reader *bytes.Reader) (string, error) {
+	return "", errors.New("NotImplemented: DecimalText")
+}
+
+func readDateTimeText(reader *bytes.Reader) (string, error) {
 	//bin, err := readBytes(reader, 8)
 	//if err != nil {
 	//	return "", err
@@ -322,4 +337,12 @@ func readUniqueIdText(reader *bytes.Reader) (string, error) {
 	//val.setVariant(uuid.ReservedRFC4122)
 	//return fmt.Sprintf("%s", val.String()), nil
 	return "", errors.New("NotImplemented: UniqueIdText")
+}
+
+func readUuidText(reader *bytes.Reader) (string, error) {
+	return "", errors.New("NotImplemented: UuidText")
+}
+
+func readTimeSpanText(reader *bytes.Reader) (string, error) {
+	return "", errors.New("NotImplemented: TimeSpanText")
 }

@@ -193,8 +193,8 @@ func initRecords() {
 	addTextRecord(0x8E, "Int64Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt64Text(r) })
 	addTextRecord(0x90, "FloatText", func(r *bytes.Reader, d *decoder) (string, error) { return readFloatText(r) })
 	addTextRecord(0x92, "DoubleText", func(r *bytes.Reader, d *decoder) (string, error) { return readDoubleText(r) })
-	addTextRecord(0x94, "DecimalText", func(r *bytes.Reader, d *decoder) (string, error) { return "", errors.New("NotSupported: Decimal Text") })
-	addTextRecord(0x96, "DateTimText", func(r *bytes.Reader, d *decoder) (string, error) { return readDateTime(r) })
+	addTextRecord(0x94, "DecimalText", func(r *bytes.Reader, d *decoder) (string, error) { return readDecimalText(r) })
+	addTextRecord(0x96, "DateTimText", func(r *bytes.Reader, d *decoder) (string, error) { return readDateTimeText(r) })
 	addTextRecord(0x98, "Chars8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars8Text(r) })
 	addTextRecord(0x9A, "Chars16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars16Text(r) })
 	addTextRecord(0x9C, "Chars32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars32Text(r) })
@@ -206,6 +206,9 @@ func initRecords() {
 	addTextRecord(0xA8, "EmptyText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
 	addTextRecord(0xAA, "DictionaryText", func(r *bytes.Reader, d *decoder) (string, error) { return readDictionaryString(r, d) })
 	addTextRecord(0xAC, "UniqueIdText", func(r *bytes.Reader, d *decoder) (string, error) { return readUniqueIdText(r) })
+	addTextRecord(0xAE, "TimeSpanText", func(r *bytes.Reader, d *decoder) (string, error) { return readTimeSpanText(r) })
+	addTextRecord(0xB0, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUuidText(r) })
+	addTextRecord(0xB2, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUInt64Text(r) })
 
 	addAzRecords()
 }
