@@ -198,8 +198,8 @@ func initRecords() {
 	addTextRecord(0x9E, "Bytes8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes8Text(r) })
 	addTextRecord(0xA0, "Bytes16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes16Text(r) })
 	addTextRecord(0xA2, "Bytes32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readBytes32Text(r) })
-	//addTextRecord(0xA4, "StartListText", func(r *bytes.Reader, d *decoder) (string, error) { return readListText(r) })
-	//addTextRecord(0xA6, "EndListText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
+	addTextRecord(0xA4, "StartListText", func(r *bytes.Reader, d *decoder) (string, error) { return readListText(r, d) })
+	addTextRecord(0xA6, "EndListText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
 	addTextRecord(0xA8, "EmptyText", func(r *bytes.Reader, d *decoder) (string, error) { return "", nil })
 	addTextRecord(0xAA, "DictionaryText", func(r *bytes.Reader, d *decoder) (string, error) { return readDictionaryString(r, d) })
 

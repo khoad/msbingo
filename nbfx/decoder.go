@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"math"
 	"encoding/base64"
+	"errors"
+	"strings"
 )
 
 type decoder struct {
@@ -265,4 +267,27 @@ func readDoubleText(reader *bytes.Reader) (string, error) {
 		return "-INF", nil
 	}
 	return fmt.Sprintf("%v", val), nil
+}
+
+func readListText(reader *bytes.Reader, d *decoder) (string, error) {
+	items := []string{}
+	for {
+		rec, err := getNextRecord(d, reader)
+		if err != nil {
+			return "", err
+		}
+		if rec.isElement() || rec.isAttribute() {
+			return "", errors.New("Records within list must be TextRecord types, but found " + rec.getName())
+		}
+		if rec.getName() == records[0xA6](d).getName() {
+			break
+		}
+		textDecoder := rec.(textRecordDecoder)
+		item, err := textDecoder.readText(reader)
+		if err != nil {
+			return "", err
+		}
+		items = append(items, item)
+	}
+	return strings.Join(items, " "), nil
 }
