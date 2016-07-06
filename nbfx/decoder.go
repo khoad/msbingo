@@ -421,3 +421,27 @@ func readBoolText(reader *bytes.Reader) (string, error) {
 	}
 	return "", errors.New("BoolText record byte must be 0x00 or 0x01")
 }
+
+func readQNameDictionaryText(reader *bytes.Reader, d *decoder) (string, error) {
+	b, err := reader.ReadByte()
+	if err != nil {
+		return "", err
+	}
+	prefix := string('a' + b)
+	name, err := readDictionaryString(reader, d)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:%s", prefix, name), nil
+}
+
+func readDictionaryString(reader *bytes.Reader, d *decoder) (string, error) {
+	key, err := readMultiByteInt31(reader)
+	if err != nil {
+		return "", err
+	}
+	if val, ok := d.codec.dict[key]; ok {
+		return val, nil
+	}
+	return fmt.Sprintf("str%d", key), nil
+}

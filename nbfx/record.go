@@ -213,6 +213,7 @@ func initRecords() {
 	addTextRecord(0xB6, "UnicodeChars8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars8Text(r) })
 	addTextRecord(0xB8, "UnicodeChars16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars16Text(r) })
 	addTextRecord(0xBA, "UnicodeChars32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readUnicodeChars32Text(r) })
+	addTextRecord(0xBC, "QNameDictionaryText", func(r *bytes.Reader, d *decoder) (string, error) { return readQNameDictionaryText(r, d) })
 
 	addAzRecords()
 }
@@ -569,17 +570,6 @@ func (r *dictionaryElementRecord) decodeElement(x *xml.Encoder, reader *bytes.Re
 	element := xml.StartElement{Name: xml.Name{Local: prefix + ":" + name}}
 
 	return r.readElementAttributes(element, x, reader)
-}
-
-func readDictionaryString(reader *bytes.Reader, decoder *decoder) (string, error) {
-	key, err := readMultiByteInt31(reader)
-	if err != nil {
-		return "", err
-	}
-	if val, ok := decoder.codec.dict[key]; ok {
-		return val, nil
-	}
-	return fmt.Sprintf("str%d", key), nil
 }
 
 //(0x0B)
