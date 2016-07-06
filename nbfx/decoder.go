@@ -156,7 +156,7 @@ func readInt64Text(reader *bytes.Reader) (string, error) {
 
 func readFloatText(reader *bytes.Reader) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 8)
+	buf, err := readBytes(reader, 4)
 	if err != nil {
 		return "", err
 	}
@@ -167,7 +167,7 @@ func readFloatText(reader *bytes.Reader) (string, error) {
 	} else if val == float32(math.Inf(-1)) {
 		return "-INF", nil
 	}
-	return fmt.Sprintf("%d", val), nil
+	return fmt.Sprintf("%v", val), nil
 }
 
 func readDoubleText(reader *bytes.Reader) (string, error) {
