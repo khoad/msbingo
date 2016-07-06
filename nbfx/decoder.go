@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"encoding/binary"
 	"math"
+	"encoding/base64"
 )
 
 type decoder struct {
@@ -85,6 +86,23 @@ func readString(reader *bytes.Reader) (string, error) {
 	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
 		return readMultiByteInt31(r)
 	})
+}
+
+var b64 = base64.StdEncoding.WithPadding(base64.StdPadding)
+
+func readBytes8Text(reader *bytes.Reader) (string, error) {
+	var err error
+	buf, err := readBytes(reader, 1)
+	if err != nil {
+		return "", err
+	}
+	var val uint8
+	err = binary.Read(buf, binary.LittleEndian, &val)
+	if err != nil {
+		return "", err
+	}
+	buf, err = readBytes(reader, int(val))
+	return b64.EncodeToString(buf.Bytes()), err
 }
 
 func readChars8Text(reader *bytes.Reader) (string, error) {
