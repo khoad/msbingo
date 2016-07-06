@@ -191,6 +191,7 @@ func initRecords() {
 	addTextRecord(0x8E, "Int64Text", func(r *bytes.Reader, d *decoder) (string, error) { return readInt64Text(r) })
 	addTextRecord(0x90, "FloatText", func(r *bytes.Reader, d *decoder) (string, error) { return readFloatText(r) })
 	addTextRecord(0x92, "DoubleText", func(r *bytes.Reader, d *decoder) (string, error) { return readDoubleText(r) })
+	addTextRecord(0x94, "DecimalText", func(r *bytes.Reader, d *decoder) (string, error) { return "", errors.New("NotSupported: Decimal Text") })
 	addTextRecord(0x98, "Chars8Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars8Text(r) })
 	addTextRecord(0x9A, "Chars16Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars16Text(r) })
 	addTextRecord(0x9C, "Chars32Text", func(r *bytes.Reader, d *decoder) (string, error) { return readChars32Text(r) })
