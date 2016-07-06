@@ -173,7 +173,7 @@ func initRecords() {
 	//0x0C-0x25: func(decoder *decoder) record { return &prefixDictionaryAttributeAZRecord{decoder: decoder, prefixIndex: 0x0C-0x25}}, ADDED IN addAzRecords()
 	//0x26-0x3F: func(decoder *decoder) record { return &prefixAttributeAZRecord{decoder: decoder, prefixIndex: 0x2626-0x3F}}, ADDED IN addAzRecords()
 
-	// Element Record
+	// Element Records
 	records[0x40] = func(decoder *decoder) record { return &shortElementRecord{&elementRecordBase{decoder: decoder}, ""} }
 	records[0x41] = func(decoder *decoder) record { return &elementRecord{&elementRecordBase{decoder: decoder}, "", ""} }
 	records[0x42] = func(decoder *decoder) record { return &shortDictionaryElementRecord{&elementRecordBase{decoder: decoder}} }
