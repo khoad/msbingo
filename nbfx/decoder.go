@@ -346,3 +346,16 @@ func readUuidText(reader *bytes.Reader) (string, error) {
 func readTimeSpanText(reader *bytes.Reader) (string, error) {
 	return "", errors.New("NotImplemented: TimeSpanText")
 }
+
+func readBoolText(reader *bytes.Reader) (string, error) {
+	b, err := reader.ReadByte()
+	if err != nil {
+		return "", err
+	}
+	if b == 0x00 {
+		return "false", nil
+	} else if b == 0x01 {
+		return "true", nil
+	}
+	return "", errors.New("BoolText record byte must be 0x00 or 0x01")
+}

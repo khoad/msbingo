@@ -209,6 +209,7 @@ func initRecords() {
 	addTextRecord(0xAE, "TimeSpanText", func(r *bytes.Reader, d *decoder) (string, error) { return readTimeSpanText(r) })
 	addTextRecord(0xB0, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUuidText(r) })
 	addTextRecord(0xB2, "UuidText", func(r *bytes.Reader, d *decoder) (string, error) { return readUInt64Text(r) })
+	addTextRecord(0xB4, "BoolText", func(r *bytes.Reader, d *decoder) (string, error) { return readBoolText(r) })
 
 	addAzRecords()
 }
