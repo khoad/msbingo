@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"strings"
+	//"time"
 )
 
 type decoder struct {
@@ -290,4 +291,19 @@ func readListText(reader *bytes.Reader, d *decoder) (string, error) {
 		items = append(items, item)
 	}
 	return strings.Join(items, " "), nil
+}
+
+func readDateTime(reader *bytes.Reader) (string, error) {
+	//bin, err := readBytes(reader, 8)
+	//if err != nil {
+	//	return "", err
+	//}
+	//timeBin := bin[:]
+	//tzBin := bin[7]
+	//tzBin[7] = tzBin[7] & 0xFC
+	//tzBin = tzBin & 0x03
+	//timeUint := uint64(timeBin)
+	//time := time.Time(timeUint)
+	//time.
+	return "", errors.New("NotImplemented: DateTimeText")
 }
