@@ -9,7 +9,14 @@ import (
 )
 
 type encoder struct {
-	codec codec
+	dict        map[string]uint32
+}
+
+func (e *encoder) addDictionaryString(index uint32, value string) {
+	if _, ok := e.dict[value]; ok {
+		return
+	}
+	e.dict[value] = index
 }
 
 func NewEncoder() Encoder {
@@ -17,10 +24,10 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{codec{make(map[uint32]string), make(map[string]uint32)}}
+	encoder := &encoder{make(map[string]uint32)}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
-			encoder.codec.addDictionaryString(k, v)
+			encoder.addDictionaryString(k, v)
 		}
 	}
 	return encoder
@@ -32,7 +39,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 	xmlDecoder := xml.NewDecoder(reader)
 	token, err := xmlDecoder.RawToken()
 	for err == nil {
-		record, err := getRecordFromToken(&e.codec, token)
+		record, err := e.getRecordFromToken(token)
 		if err != nil {
 			return binBuffer.Bytes(), err
 		}
@@ -52,12 +59,12 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 	return binBuffer.Bytes(), nil
 }
 
-func getRecordFromToken(codec *codec, token xml.Token) (record, error) {
+func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 	switch token.(type) {
 	case xml.StartElement:
-		return getStartElementRecordFromToken(codec, token.(xml.StartElement))
+		return e.getStartElementRecordFromToken(token.(xml.StartElement))
 	case xml.CharData:
-		return getTextRecordFromToken(codec, token.(xml.CharData))
+		return e.getTextRecordFromToken(token.(xml.CharData))
 	}
 
 	tokenXmlBytes, err := xml.Marshal(token)
@@ -70,12 +77,12 @@ func getRecordFromToken(codec *codec, token xml.Token) (record, error) {
 	return nil, errors.New(fmt.Sprint("Unknown token", tokenXml))
 }
 
-func getTextRecordFromToken(c *codec, cd xml.CharData) (record, error) {
+func (e *encoder) getTextRecordFromToken(cd xml.CharData) (record, error) {
 	//return records[0x9C](c)
 	return nil, errors.New("UnsupportedOpertation: getTextRecordFromToken")
 }
 
-func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement) (record, error) {
+func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) (record, error) {
 	//fmt.Printf("Getting start element for %s", startElement.Name.Local)
 	prefix := startElement.Name.Space
 	name := startElement.Name.Local
@@ -85,7 +92,7 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 	}
 	var nameIndex uint32
 	isNameIndexAssigned := false
-	if i, ok := codec.reverseDict[name]; ok {
+	if i, ok := e.dict[name]; ok {
 		nameIndex = i
 		isNameIndexAssigned = true
 	}

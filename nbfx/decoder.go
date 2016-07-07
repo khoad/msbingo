@@ -15,8 +15,15 @@ import (
 )
 
 type decoder struct {
-	codec        codec
+	dict        map[uint32]string
 	elementStack Stack
+}
+
+func (d *decoder) addDictionaryString(index uint32, value string) {
+	if _, ok := d.dict[index]; ok {
+		return
+	}
+	d.dict[index] = value
 }
 
 func NewDecoder() Decoder {
@@ -24,10 +31,10 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{codec{make(map[uint32]string), make(map[string]uint32)}, Stack{}}
+	decoder := &decoder{make(map[uint32]string), Stack{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
-			decoder.codec.addDictionaryString(k, v)
+			decoder.addDictionaryString(k, v)
 		}
 	}
 	return decoder
@@ -42,6 +49,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 		if rec.isElement() {
 			elementReader := rec.(elementRecordDecoder)
 			rec, err = elementReader.decodeElement(xmlEncoder, reader)
+			fmt.Println("Decoded Element", rec, err)
 		} else { // text record
 			//fmt.Println("Expecting Text Record and got", rec.getName())
 			textReader := rec.(textRecordDecoder)
@@ -52,7 +60,7 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 			rec, err = getNextRecord(d, reader)
 		}
 	}
-	//fmt.Println("Exiting main decoder loop...")
+	fmt.Println("Exiting main decoder loop...")
 	xmlEncoder.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err
@@ -440,7 +448,7 @@ func readDictionaryString(reader *bytes.Reader, d *decoder) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if val, ok := d.codec.dict[key]; ok {
+	if val, ok := d.dict[key]; ok {
 		return val, nil
 	}
 	return fmt.Sprintf("str%d", key), nil

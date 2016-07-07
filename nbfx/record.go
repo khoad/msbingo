@@ -64,17 +64,13 @@ func (r *elementRecordBase) isElement() bool   { return true }
 func (r *elementRecordBase) isAttribute() bool { return false }
 
 func (r *elementRecordBase) readElementAttributes(element xml.StartElement, x *xml.Encoder, reader *bytes.Reader) (record, error) {
+	var peekRecord record
+	var attributeToken xml.Attr
+
 	// get next record
 	//fmt.Println("getting next record")
 	rec, err := getNextRecord(r.decoder, reader)
-	if err != nil {
-		return nil, err
-	}
-
-	var peekRecord record
-
-	var attributeToken xml.Attr
-	for rec != nil {
+	for err == nil && rec != nil {
 		//fmt.Println("Processing record", rec.getName())
 		if err != nil {
 			return nil, err
