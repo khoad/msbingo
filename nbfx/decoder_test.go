@@ -509,20 +509,6 @@ func TestDecodeExampleQNameDictionaryTextWithEndElement(t *testing.T) {
 
 //----------------------------------------------------
 
-func TestDecodePrefixDictionaryElementB(t *testing.T) {
-	testDecode(t, []byte{0x45, 0x02}, "<b:str2>")
-}
-
-func TestDecodeOneText(t *testing.T) {
-	testDecode(t, []byte{0x82}, "1")
-}
-
-func TestDecodePrefixDictionaryElementAZ(t *testing.T) {
-	testDecode(t, []byte{0x56, 0x02}, "<s:str2>")
-}
-
-//----------------------------------------------------
-
 func TestReadMultiByteInt31_17(t *testing.T) {
 	testReadMultiByteInt31(t, []byte{0x11}, 17)
 }

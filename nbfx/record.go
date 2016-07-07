@@ -22,7 +22,7 @@ type elementRecordDecoder interface {
 
 type elementRecordWriter interface {
 	record
-	writeElement(writer io.Writer) error
+	writeElement(writer io.Writer, x xml.Token) error
 }
 
 type attributeRecordDecoder interface {
@@ -34,6 +34,11 @@ type textRecordDecoder interface {
 	record
 	decodeText(x *xml.Encoder, reader *bytes.Reader) (string, error)
 	readText(reader *bytes.Reader) (string, error)
+}
+
+type textRecordWriter interface {
+	record
+	writeText(w io.Writer) error
 }
 
 func getNextRecord(decoder *decoder, reader *bytes.Reader) (record, error) {
@@ -152,6 +157,10 @@ func (r *textRecordBase) decodeText(x *xml.Encoder, reader *bytes.Reader) (strin
 		}
 	}
 	return text, nil
+}
+
+func (r *textRecordBase) writeText(w *io.Writer) error {
+	return errors.New("NotImplement: writeText for " + r.getName())
 }
 
 var records = map[byte]func(*decoder) record{}
@@ -644,9 +653,12 @@ func (r *prefixElementAZRecord) decodeElement(x *xml.Encoder, reader *bytes.Read
 	return r.readElementAttributes(element, x, reader)
 }
 
-//func (r *prefixElementAZRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: prefixElementAZRecord.write")
-//}
+func (r *prefixElementAZRecord) writeElement(w io.Writer, x xml.Token) error {
+	w.Write([]byte{0x5E + r.prefixIndex})
+	e := x.(xml.StartElement)
+	writeString(w, e.Name.Local)
+	return nil
+}
 
 // 0x41
 type elementRecord struct {

@@ -1,6 +1,7 @@
 package nbfx
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -26,35 +27,55 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 }
 
 func (e *encoder) Encode(xmlString string) ([]byte, error) {
-	//reader := bytes.NewReader([]byte(xmlString))
-	//binBuffer := &bytes.Buffer{}
-	//xmlDecoder := xml.NewDecoder(reader)
-	//token, err := xmlDecoder.RawToken()
-	//for err == nil {
-	//	record := getRecordFromToken(&e.codec, token)
-	//	if record == nil {
-	//		return binBuffer.Bytes(), errors.New(fmt.Sprintf("Unknown Token %s", token))
-	//	}
-	//	err = record.writeElement(binBuffer)
-	//	if err != nil {
-	//		return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
-	//	}
-	//	token, err = xmlDecoder.RawToken()
-	//}
-	//return binBuffer.Bytes(), nil
-	return nil, errors.New("Restore this")
+	reader := bytes.NewReader([]byte(xmlString))
+	binBuffer := &bytes.Buffer{}
+	xmlDecoder := xml.NewDecoder(reader)
+	token, err := xmlDecoder.RawToken()
+	for err == nil {
+		record, err := getRecordFromToken(&e.codec, token)
+		if err != nil {
+			return binBuffer.Bytes(), err
+		}
+		fmt.Println("Encode record", record.getName())
+		if record.isElement() {
+			elementWriter := record.(elementRecordWriter)
+			err = elementWriter.writeElement(binBuffer, token)
+		} else {
+			textWriter := record.(textRecordWriter)
+			err = textWriter.writeText(binBuffer)
+		}
+		if err != nil {
+			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
+		}
+		token, err = xmlDecoder.RawToken()
+	}
+	return binBuffer.Bytes(), nil
 }
 
-func getRecordFromToken(codec *codec, token xml.Token) record {
+func getRecordFromToken(codec *codec, token xml.Token) (record, error) {
 	switch token.(type) {
 	case xml.StartElement:
 		return getStartElementRecordFromToken(codec, token.(xml.StartElement))
+	case xml.CharData:
+		return getTextRecordFromToken(codec, token.(xml.CharData))
 	}
 
-	return nil
+	tokenXmlBytes, err := xml.Marshal(token)
+	var tokenXml string
+	if err != nil {
+		tokenXml = "[[UNKNOWN]]"
+	} else {
+		tokenXml = string(tokenXmlBytes)
+	}
+	return nil, errors.New(fmt.Sprint("Unknown token", tokenXml))
 }
 
-func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement) record {
+func getTextRecordFromToken(c *codec, cd xml.CharData) (record, error) {
+	//return records[0x9C](c)
+	return nil, errors.New("UnsupportedOpertation: getTextRecordFromToken")
+}
+
+func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement) (record, error) {
 	//fmt.Printf("Getting start element for %s", startElement.Name.Local)
 	prefix := startElement.Name.Space
 	name := startElement.Name.Local
@@ -71,23 +92,24 @@ func getStartElementRecordFromToken(codec *codec, startElement xml.StartElement)
 
 	if prefix == "" {
 		if !isNameIndexAssigned {
-			return &shortElementRecord{name: name}
+			return &shortElementRecord{name: name}, nil
 		} else {
-			return &dictionaryElementRecord{nameIndex: nameIndex}
+			return &dictionaryElementRecord{nameIndex: nameIndex}, nil
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return &prefixElementAZRecord{prefixIndex: byte(prefixIndex), name: name}
+			return &prefixElementAZRecord{prefixIndex: byte(prefixIndex), name: name}, nil
 		} else {
-			return &prefixDictionaryElementAZRecord{prefixIndex: byte(prefixIndex), nameIndex: nameIndex}
+			return &prefixDictionaryElementAZRecord{prefixIndex: byte(prefixIndex), nameIndex: nameIndex}, nil
 		}
 	} else {
 		if !isNameIndexAssigned {
-			return &elementRecord{prefix: prefix, name: name}
+			return &elementRecord{prefix: prefix, name: name}, nil
 		} else {
-			return &dictionaryElementRecord{prefix: prefix, nameIndex: nameIndex}
+			return &dictionaryElementRecord{prefix: prefix, nameIndex: nameIndex}, nil
 		}
 	}
+	return nil, errors.New("getStartElementRecordFromToken unable to resolve required xml.Token")
 }
 
 func writeString(writer io.Writer, str string) (int, error) {

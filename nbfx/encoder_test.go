@@ -10,18 +10,20 @@ import (
 func TestEncodeExample1(t *testing.T) {
 	encoder := NewEncoder()
 	path := "../examples/1"
-	bin, err := ioutil.ReadFile(path + ".xml")
+	xmlBin, err := ioutil.ReadFile(path + ".xml")
 	if failOn(err, "unable to open "+path+".xml", t) {
 		return
 	}
-	_, err = encoder.Encode(string(bin))
-	if err == nil {
-		t.Error("Expected err")
-		return
-	} else if err.Error() != "Unknown Record ID 0x44" {
-		t.Error("Expected Unknown Record ID 0x44 message but got " + err.Error())
+	expected, err := ioutil.ReadFile(path + ".bin")
+	if failOn(err, "unable to open "+path+".bin", t) {
 		return
 	}
+	actual, err := encoder.Encode(string(xmlBin))
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	assertBinEqual(t, actual, expected)
 }
 
 func TestEncodePrefixDictionaryElementB(t *testing.T) {
