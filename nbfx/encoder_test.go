@@ -93,7 +93,7 @@ func TestWriteString_abc(t *testing.T) {
 
 func testWriteMultiByteInt31(t *testing.T, num uint32, expected []byte) {
 	buffer := bytes.Buffer{}
-	e := &encoder{bin:&bytes.Buffer{}}
+	e := &encoder{bin:&buffer}
 	i, err := writeMultiByteInt31(e, num)
 	if err != nil {
 		t.Error("Error: " + err.Error())
