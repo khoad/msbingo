@@ -5,13 +5,12 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
 )
 
 type encoder struct {
 	dict        map[string]uint32
 	xml *xml.Decoder
-	bin *io.Writer
+	bin *bytes.Buffer
 }
 
 func (e *encoder) addDictionaryString(index uint32, value string) {
@@ -36,29 +35,29 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 }
 
 func (e *encoder) Encode(xmlString string) ([]byte, error) {
-	bin := &bytes.Buffer{}
+	e.bin = &bytes.Buffer{}
 	reader := bytes.NewReader([]byte(xmlString))
-	xml := xml.NewDecoder(reader)
-	token, err := xml.RawToken()
+	e.xml = xml.NewDecoder(reader)
+	token, err := e.xml.RawToken()
 	for err == nil {
 		record, err := e.getRecordFromToken(token)
 		if err != nil {
-			return bin.Bytes(), err
+			return e.bin.Bytes(), err
 		}
 		fmt.Println("Encode record", record.getName())
 		if record.isElement() {
 			elementWriter := record.(elementRecordWriter)
-			err = elementWriter.writeElement(e)
+			err = elementWriter.writeElement(e, token.(xml.StartElement))
 		} else {
 			textWriter := record.(textRecordWriter)
 			err = textWriter.writeText(e)
 		}
 		if err != nil {
-			return bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
+			return e.bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
 		}
-		token, err = xml.RawToken()
+		token, err = e.xml.RawToken()
 	}
-	return bin.Bytes(), nil
+	return e.bin.Bytes(), nil
 }
 
 func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
@@ -80,8 +79,7 @@ func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 }
 
 func (e *encoder) getTextRecordFromToken(cd xml.CharData) (record, error) {
-	//return records[0x9C](c)
-	return nil, errors.New("UnsupportedOpertation: getTextRecordFromToken")
+	return records[Chars32Text], nil
 }
 
 func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) (record, error) {
@@ -119,30 +117,30 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 	return nil, errors.New("getStartElementRecordFromToken unable to resolve required xml.Token")
 }
 
-func writeString(writer io.Writer, str string) (int, error) {
+func writeString(e *encoder, str string) (int, error) {
 	var strBytes = []byte(str)
-	lenByteLen, err := writeMultiByteInt31(writer, uint32(len(strBytes)))
+	lenByteLen, err := writeMultiByteInt31(e, uint32(len(strBytes)))
 	if err != nil {
 		return lenByteLen, err
 	}
-	strByteLen, err := writer.Write(strBytes)
+	strByteLen, err := e.bin.Write(strBytes)
 	return lenByteLen + strByteLen, err
 }
 
-func writeMultiByteInt31(writer io.Writer, num uint32) (int, error) {
+func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	max := uint32(2147483647)
 	if num > max {
 		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
 	if num < MASK_MBI31 {
-		return writer.Write([]byte{byte(num)})
+		return e.bin.Write([]byte{byte(num)})
 	}
 	q := num / MASK_MBI31
 	rem := num % MASK_MBI31
-	n1, err := writer.Write([]byte{byte(MASK_MBI31 + rem)})
+	n1, err := e.bin.Write([]byte{byte(MASK_MBI31 + rem)})
 	if err != nil {
 		return n1, err
 	}
-	n2, err := writeMultiByteInt31(writer, q)
+	n2, err := writeMultiByteInt31(e, q)
 	return n1 + n2, err
 }

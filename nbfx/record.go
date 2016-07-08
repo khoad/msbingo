@@ -18,7 +18,7 @@ type elementRecordDecoder interface {
 }
 
 type elementRecordWriter interface {
-	writeElement(e *encoder) error
+	writeElement(e *encoder, element xml.StartElement) error
 }
 
 type attributeRecordDecoder interface {
@@ -41,7 +41,7 @@ type recordBase struct {
 
 func (r *recordBase) isElement() bool   { return false }
 func (r *recordBase) isAttribute() bool { return false }
-func (r recordBase) getName() string { return r.name }
+func (r *recordBase) getName() string { return r.name }
 
 type elementRecordBase struct {
 	recordBase
@@ -163,27 +163,27 @@ var records = map[byte]record{}
 
 func initRecords() {
 	// Miscellaneous Records
-	addRecord(EndElement, "EndElement", &endElementRecord{&elementRecordBase{}})
-	records[Comment] = &commentRecord{&textRecordBase{}}
-	records[Array] = &arrayRecord{&elementRecordBase{}}
+	records[EndElement] = &endElementRecord{}
+	records[Comment] = &commentRecord{}
+	records[Array] = &arrayRecord{}
 
 	// Attribute Records
-	records[ShortAttribute] = &shortAttributeRecord{&attributeRecordBase{}}
-	records[Attribute] = &attributeRecord{&attributeRecordBase{}}
-	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{&attributeRecordBase{}}
-	records[DictionaryAttribute] = &dictionaryAttributeRecord{&attributeRecordBase{}}
-	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{&attributeRecordBase{}}
-	records[XmlnsAttribute] = &xmlnsAttributeRecord{&attributeRecordBase{}}
-	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{&attributeRecordBase{}}
-	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{&attributeRecordBase{}}
+	records[ShortAttribute] = &shortAttributeRecord{}
+	records[Attribute] = &attributeRecord{}
+	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{}
+	records[DictionaryAttribute] = &dictionaryAttributeRecord{}
+	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{}
+	records[XmlnsAttribute] = &xmlnsAttributeRecord{}
+	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{}
+	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{}
 	// PrefixDictionaryAttributeAZRecord ADDED IN addAzRecords()
 	// PrefixAttributeAZRecord ADDED IN addAzRecords()
 
 	// Element Records
-	records[ShortElement] = &shortElementRecord{&elementRecordBase{}}
-	records[Element] = &elementRecord{&elementRecordBase{}}
-	records[ShortDictionaryElement] = &shortDictionaryElementRecord{&elementRecordBase{}}
-	records[DictionaryElement] = &dictionaryElementRecord{&elementRecordBase{}}
+	records[ShortElement] = &shortElementRecord{}
+	records[Element] = &elementRecord{}
+	records[ShortDictionaryElement] = &shortDictionaryElementRecord{}
+	records[DictionaryElement] = &dictionaryElementRecord{}
 	// PrefixDictionaryElementAZRecord ADDED IN addAzRecords()
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
@@ -223,13 +223,6 @@ func initRecords() {
 	addAzRecords()
 }
 
-func addRecord(id byte, name string, rec record) {
-	base := rec.(recordBase)
-	base.id = id
-	base.name = name
-	records[id] = rec
-}
-
 func addTextRecord(recordId byte, textName string, charData func(*decoder) (string, error)) {
 	records[recordId] = &textRecordBase{recordBase{name: textName, id: recordId}, false, charData}
 	records[recordId+1] = &textRecordBase{recordBase{name: textName + "WithEndElement", id: recordId + 1}, true, charData}
@@ -238,10 +231,10 @@ func addTextRecord(recordId byte, textName string, charData func(*decoder) (stri
 func addAzRecords() {
 	for b := 0; b < 26; b++ {
 		byt := byte(b)
-		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{&attributeRecordBase{}, byt, 0}
-		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{&attributeRecordBase{}, byt}
-		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{&elementRecordBase{}, byt, 0}
-		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{&elementRecordBase{}, "", byt}
+		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{attributeRecordBase{}, byt, 0}
+		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{attributeRecordBase{}, byt}
+		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{elementRecordBase{}, byt, 0}
+		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{elementRecordBase{recordBase{"", PrefixElementA+byt}}}
 	}
 }
 
@@ -251,7 +244,7 @@ func init() {
 
 //(0x01)
 type endElementRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *endElementRecord) getName() string {
@@ -272,7 +265,7 @@ func (r *endElementRecord) write(writer io.Writer) error {
 
 //(0x04)
 type shortAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *shortAttributeRecord) getName() string {
@@ -298,7 +291,7 @@ func (r *shortAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
 
 //(0x05)
 type attributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *attributeRecord) getName() string {
@@ -328,7 +321,7 @@ func (r *attributeRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
 
 //(0x06)
 type shortDictionaryAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *shortDictionaryAttributeRecord) getName() string {
@@ -354,7 +347,7 @@ func (r *shortDictionaryAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, 
 
 //(0x07)
 type dictionaryAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *dictionaryAttributeRecord) getName() string {
@@ -384,7 +377,7 @@ func (r *dictionaryAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error
 
 //(0x08)
 type shortXmlnsAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *shortXmlnsAttributeRecord) getName() string {
@@ -402,7 +395,7 @@ func (r *shortXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error
 
 //(0x09)
 type xmlnsAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *xmlnsAttributeRecord) getName() string {
@@ -424,7 +417,7 @@ func (r *xmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
 
 //(0x0A)
 type shortDictionaryXmlnsAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *shortDictionaryXmlnsAttributeRecord) getName() string {
@@ -442,7 +435,7 @@ func (r *shortDictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.A
 
 //(0x0C-0x25)
 type prefixDictionaryAttributeAZRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 	prefixIndex byte
 	nameIndex   uint32
 }
@@ -473,7 +466,7 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(d *decoder) (xml.Att
 
 //(0x26-0x3F)
 type prefixAttributeAZRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 	prefixIndex byte
 }
 
@@ -510,7 +503,7 @@ func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) 
 
 //(0x44-0x5D)
 type prefixDictionaryElementAZRecord struct {
-	*elementRecordBase
+	elementRecordBase
 	prefixIndex byte
 	nameIndex   uint32
 }
@@ -529,15 +522,15 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 	return r.readElementAttributes(element, d)
 }
 
-func (r *prefixDictionaryElementAZRecord) write(writer io.Writer) error {
-	writer.Write([]byte{0x44 + r.prefixIndex})
-	_, err := writeMultiByteInt31(writer, r.nameIndex)
+func (r *prefixDictionaryElementAZRecord) writeElement(e *encoder, element xml.StartElement) error {
+	e.bin.Write([]byte{0x44 + r.prefixIndex})
+	_, err := writeMultiByteInt31(e, r.nameIndex)
 	return err
 }
 
 //(0x42)
 type shortDictionaryElementRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *shortDictionaryElementRecord) getName() string {
@@ -556,7 +549,7 @@ func (r *shortDictionaryElementRecord) decodeElement(d *decoder) (record, error)
 
 //(0x43)
 type dictionaryElementRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *dictionaryElementRecord) getName() string {
@@ -579,7 +572,7 @@ func (r *dictionaryElementRecord) decodeElement(d *decoder) (record, error) {
 
 //(0x0B)
 type dictionaryXmlnsAttributeRecord struct {
-	*attributeRecordBase
+	attributeRecordBase
 }
 
 func (r *dictionaryXmlnsAttributeRecord) getName() string {
@@ -606,7 +599,7 @@ func (r *dictionaryXmlnsAttributeRecord) write(writer io.Writer) error {
 
 // 0x40
 type shortElementRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *shortElementRecord) getName() string {
@@ -629,13 +622,11 @@ func (r *shortElementRecord) decodeElement(d *decoder) (record, error) {
 
 // 0x5E-0x77
 type prefixElementAZRecord struct {
-	*elementRecordBase
-	name        string
-	prefixIndex byte
+	elementRecordBase
 }
 
 func (r *prefixElementAZRecord) getName() string {
-	return fmt.Sprintf("PrefixElementAZRecord (%#x)", r.prefixIndex+0x5E)
+	return fmt.Sprint(r)
 }
 
 func (r *prefixElementAZRecord) decodeElement(d *decoder) (record, error) {
@@ -643,21 +634,23 @@ func (r *prefixElementAZRecord) decodeElement(d *decoder) (record, error) {
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
+	element := xml.StartElement{Name: xml.Name{Local: string('a'+(r.id - PrefixElementA)) + ":" + name}}
 
 	return r.readElementAttributes(element, d)
 }
 
-func (r *prefixElementAZRecord) writeElement(w io.Writer, x xml.Token) error {
-	w.Write([]byte{0x5E + r.prefixIndex})
-	e := x.(xml.StartElement)
-	writeString(w, e.Name.Local)
-	return nil
+func (r *prefixElementAZRecord) writeElement(e *encoder, element xml.StartElement) error {
+	_, err := e.bin.Write([]byte{PrefixElementA + (r.id - PrefixElementA)})
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, element.Name.Local)
+	return err
 }
 
 // 0x41
 type elementRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *elementRecord) getName() string {
@@ -684,7 +677,7 @@ func (r *elementRecord) decodeElement(d *decoder) (record, error) {
 
 // 0x02
 type commentRecord struct {
-	*textRecordBase
+	textRecordBase
 }
 
 func (r *commentRecord) getName() string {
@@ -711,7 +704,7 @@ func (r *commentRecord) decodeText(d *decoder) (string, error) {
 
 // 0x03
 type arrayRecord struct {
-	*elementRecordBase
+	elementRecordBase
 }
 
 func (r *arrayRecord) getName() string {

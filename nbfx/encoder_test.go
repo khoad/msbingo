@@ -79,7 +79,8 @@ func TestWriteString_abc(t *testing.T) {
 	str := "abc"
 	expected := []byte{0x03, 0x61, 0x62, 0x63}
 	expectedLen := len(expected)
-	i, err := writeString(&buffer, str)
+	e := &encoder{bin:&buffer}
+	i, err := writeString(e, str)
 	if err != nil {
 		t.Error("Error: " + err.Error())
 		return
@@ -92,7 +93,8 @@ func TestWriteString_abc(t *testing.T) {
 
 func testWriteMultiByteInt31(t *testing.T, num uint32, expected []byte) {
 	buffer := bytes.Buffer{}
-	i, err := writeMultiByteInt31(&buffer, num)
+	e := &encoder{bin:&bytes.Buffer{}}
+	i, err := writeMultiByteInt31(e, num)
 	if err != nil {
 		t.Error("Error: " + err.Error())
 		return
