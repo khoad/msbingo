@@ -19,7 +19,7 @@ type elementRecordDecoder interface {
 	decodeElement(d *decoder) (record, error)
 }
 
-type elementRecordWriter interface {
+type elementRecordEncoder interface {
 	encodeElement(e *encoder, element xml.StartElement) error
 }
 
@@ -27,12 +27,16 @@ type attributeRecordDecoder interface {
 	decodeAttribute(d *decoder) (xml.Attr, error)
 }
 
+type attributeRecordEncoder interface {
+	encodeAttribute(e *encoder, attr xml.Attr) error
+}
+
 type textRecordDecoder interface {
 	decodeText(d *decoder) (string, error)
 	readText(d *decoder) (string, error)
 }
 
-type textRecordWriter interface {
+type textRecordEncoder interface {
 	encodeText(e *encoder, cd xml.CharData) error
 }
 
@@ -98,6 +102,26 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *d
 	return peekRecord, nil
 }
 
+func (r *elementRecordBase) encodeAttributes(e *encoder, attrs []xml.Attr) error {
+	var err error
+	for _, attr := range attrs {
+		err = r.encodeAttribute(e, attr)
+		if err != nil {
+			break
+		}
+	}
+	return err
+}
+
+func (r *elementRecordBase) encodeAttribute(e *encoder, attr xml.Attr) error {
+	rec, err := e.getAttributeRecordFromToken(attr)
+	if err != nil {
+		return err
+	}
+	attrRec := rec.(attributeRecordEncoder)
+	return attrRec.encodeAttribute(e, attr)
+}
+
 func (r *elementRecordBase) encodeElement(e *encoder, element xml.StartElement) error {
 	return errors.New(fmt.Sprint("NotImplemented: encodeElement on", r))
 }
@@ -107,6 +131,10 @@ type attributeRecordBase struct{
 }
 
 func (r *attributeRecordBase) isAttribute() bool { return true }
+
+func (r *attributeRecordBase) encodeAttribute(e *encoder, attr xml.Attr) error {
+	return errors.New(fmt.Sprint("NotImplemented: encodeAttribute on", r))
+}
 
 type textRecordBase struct {
 	recordBase
@@ -529,12 +557,9 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 }
 
 func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	//fmt.Println(fmt.Sprint("Writing PrefixDictionaryElement" + string('a' + PrefixDictionaryElementA), element))
 	e.bin.Write([]byte{r.id})
 	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
-	//if err != nil {
-	//	fmt.Println("Write PrefixDictionaryElement error", err.Error())
-	//}
+	err = r.encodeAttributes(e, element.Attr)
 	return err
 }
 
@@ -601,6 +626,19 @@ func (r *dictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, 
 	}
 
 	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
+}
+
+func (r *dictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(DictionaryXmlnsAttribute)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+	_, err = writeDictionaryString(e, attr.Value)
+	return err
 }
 
 // 0x40

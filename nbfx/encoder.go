@@ -47,14 +47,14 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		//fmt.Println("Encode record", record.getName())
 		if record.isStartElement() {
 			fmt.Println("Encode elment", token)
-			elementWriter := record.(elementRecordWriter)
+			elementWriter := record.(elementRecordEncoder)
 			fmt.Println("Writer is", elementWriter)
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
-			textWriter := record.(textRecordWriter)
+			textWriter := record.(textRecordEncoder)
 			err = textWriter.encodeText(e, token.(xml.CharData))
 		} else if record.isEndElement() {
-			elementWriter := record.(elementRecordWriter)
+			elementWriter := record.(elementRecordEncoder)
 			err = elementWriter.encodeElement(e, xml.StartElement{})
 		} else {
 			err = errors.New(fmt.Sprint("NotSupported: Encoding record", record))
@@ -124,7 +124,59 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 			return records[DictionaryElement], nil
 		}
 	}
-	return nil, errors.New("getStartElementRecordFromToken unable to resolve required xml.Token")
+	return nil, errors.New(fmt.Sprint("getStartElementRecordFromToken unable to resolve", startElement))
+}
+
+func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
+	//fmt.Printf("Getting attr element for %s", attr.Name.Local)
+	prefix := attr.Name.Space
+	name := attr.Name.Local
+	isXmlns := prefix == "xmlns" || prefix == "" && name == "xmlns"
+	prefixIndex := -1
+	if len(prefix) == 1 && byte(prefix[0]) >= byte('a') && byte(prefix[0]) <= byte('z') {
+		prefixIndex = int(byte(prefix[0]) - byte('a'))
+	}
+	isNameIndexAssigned := false
+	if _, ok := e.dict[name]; ok {
+		isNameIndexAssigned = true
+	}
+
+	fmt.Println("getAttributeRecordFromToken", prefix, name, isXmlns, prefixIndex, isNameIndexAssigned)
+
+	if prefix == "" {
+		if isXmlns {
+			if _, ok := e.dict[attr.Value]; ok {
+				return records [ShortDictionaryXmlnsAttribute], nil
+			} else {
+				return records [ShortXmlnsAttribute], nil
+			}
+		} else if isNameIndexAssigned {
+			return records[ShortDictionaryAttribute], nil
+		} else {
+			return records[ShortAttribute], nil
+		}
+	} else if prefixIndex != -1 {
+		if !isNameIndexAssigned {
+			return records[PrefixAttributeA + byte(prefixIndex)], nil
+		} else {
+			return records[PrefixDictionaryAttributeA+ byte(prefixIndex)], nil
+		}
+	} else {
+		if isXmlns {
+			if !isNameIndexAssigned {
+				return records[XmlnsAttribute], nil
+			} else {
+				return records[DictionaryXmlnsAttribute], nil
+			}
+		} else {
+			if !isNameIndexAssigned {
+				return records[Attribute], nil
+			} else {
+				return records[DictionaryAttribute], nil
+			}
+		}
+	}
+	return nil, errors.New(fmt.Sprint("getAttributeRecordFromToken unable to resolve", attr))
 }
 
 func writeString(e *encoder, str string) (int, error) {
@@ -135,6 +187,14 @@ func writeString(e *encoder, str string) (int, error) {
 	}
 	strByteLen, err := e.bin.Write(strBytes)
 	return lenByteLen + strByteLen, err
+}
+
+func writeDictionaryString(e *encoder, str string) (int, error) {
+	key, ok := e.dict[str]
+	if !ok {
+		return 0, errors.New(fmt.Sprint("Value %s not found in dictionary for DictionaryString record", str))
+	}
+	return writeMultiByteInt31(e, uint32(key))
 }
 
 func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
