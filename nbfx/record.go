@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type record interface {
@@ -138,7 +139,7 @@ func (r *textRecordBase) decodeText(d *decoder) (string, error) {
 	return text, nil
 }
 
-func (r *textRecordBase) writeText(w *io.Writer) error {
+func (r *textRecordBase) writeText(e *encoder) error {
 	return errors.New("NotImplement: writeText for " + r.getName())
 }
 
@@ -163,27 +164,27 @@ var records = map[byte]record{}
 
 func initRecords() {
 	// Miscellaneous Records
-	records[EndElement] = &endElementRecord{}
-	records[Comment] = &commentRecord{}
-	records[Array] = &arrayRecord{}
+	records[EndElement] = &endElementRecord{elementRecordBase{recordBase{"EndElement",EndElement}}}
+	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false,nil}}
+	records[Array] = &arrayRecord{elementRecordBase{recordBase{"Array",Array}}}
 
 	// Attribute Records
-	records[ShortAttribute] = &shortAttributeRecord{}
-	records[Attribute] = &attributeRecord{}
-	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{}
-	records[DictionaryAttribute] = &dictionaryAttributeRecord{}
-	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{}
-	records[XmlnsAttribute] = &xmlnsAttributeRecord{}
-	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{}
-	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{}
+	records[ShortAttribute] = &shortAttributeRecord{attributeRecordBase{recordBase{"ShortAttribute",ShortAttribute}}}
+	records[Attribute] = &attributeRecord{attributeRecordBase{recordBase{"Attribute",Attribute}}}
+	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryAttribute",ShortDictionaryAttribute}}}
+	records[DictionaryAttribute] = &dictionaryAttributeRecord{attributeRecordBase{recordBase{"DictionaryAttribute",DictionaryAttribute}}}
+	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortXmlnsAttribute",ShortXmlnsAttribute}}}
+	records[XmlnsAttribute] = &xmlnsAttributeRecord{attributeRecordBase{recordBase{"XmlnsAttribute",XmlnsAttribute}}}
+	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryXmlnsAttribute",ShortDictionaryXmlnsAttribute}}}
+	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"DictionaryXmlnsAttribute",DictionaryXmlnsAttribute}}}
 	// PrefixDictionaryAttributeAZRecord ADDED IN addAzRecords()
 	// PrefixAttributeAZRecord ADDED IN addAzRecords()
 
 	// Element Records
-	records[ShortElement] = &shortElementRecord{}
-	records[Element] = &elementRecord{}
-	records[ShortDictionaryElement] = &shortDictionaryElementRecord{}
-	records[DictionaryElement] = &dictionaryElementRecord{}
+	records[ShortElement] = &shortElementRecord{elementRecordBase{recordBase{"ShortElement",ShortElement}}}
+	records[Element] = &elementRecord{elementRecordBase{recordBase{"Element",Element}}}
+	records[ShortDictionaryElement] = &shortDictionaryElementRecord{elementRecordBase{recordBase{"ShortDictionaryElement",ShortDictionaryElement}}}
+	records[DictionaryElement] = &dictionaryElementRecord{elementRecordBase{recordBase{"DictionaryElement",DictionaryElement}}}
 	// PrefixDictionaryElementAZRecord ADDED IN addAzRecords()
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
@@ -229,12 +230,14 @@ func addTextRecord(recordId byte, textName string, charData func(*decoder) (stri
 }
 
 func addAzRecords() {
-	for b := 0; b < 26; b++ {
+	var b byte
+	for b = 0; b < 26; b++ {
 		byt := byte(b)
-		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{attributeRecordBase{}, byt, 0}
-		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{attributeRecordBase{}, byt}
-		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{elementRecordBase{}, byt, 0}
-		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{elementRecordBase{recordBase{"", PrefixElementA+byt}}}
+		prefix := strings.ToUpper(string('a'+b))
+		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{attributeRecordBase{recordBase{"PrefixDictionaryAttribute"+prefix,byte(PrefixDictionaryAttributeA+b)}}}
+		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{attributeRecordBase{recordBase{"PrefixAttribute"+prefix,byte(PrefixAttributeA+b)}}}
+		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{elementRecordBase{recordBase{"PrefixDictionaryElement"+prefix,byte(PrefixDictionaryElementA+b)}}}
+		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{elementRecordBase{recordBase{"PrefixElement"+prefix, byte(PrefixElementA+byt)}}}
 	}
 }
 
@@ -436,12 +439,6 @@ func (r *shortDictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.A
 //(0x0C-0x25)
 type prefixDictionaryAttributeAZRecord struct {
 	attributeRecordBase
-	prefixIndex byte
-	nameIndex   uint32
-}
-
-func (r *prefixDictionaryAttributeAZRecord) getName() string {
-	return fmt.Sprintf("PrefixDictionaryAttributeAZRecord (%#x)", byte(0x0C+r.prefixIndex))
 }
 
 func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
@@ -461,17 +458,12 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(d *decoder) (xml.Att
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	return xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}, Value: text}, nil
+	return xml.Attr{Name: xml.Name{Local: string('a'+r.id-PrefixDictionaryAttributeA) + ":" + name}, Value: text}, nil
 }
 
 //(0x26-0x3F)
 type prefixAttributeAZRecord struct {
 	attributeRecordBase
-	prefixIndex byte
-}
-
-func (r *prefixAttributeAZRecord) getName() string {
-	return fmt.Sprintf("PrefixAttributeAZRecord (%#x)", byte(0x26+r.prefixIndex))
 }
 
 func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
@@ -491,7 +483,7 @@ func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) 
 	if err != nil {
 		return xml.Attr{}, err
 	}
-	return xml.Attr{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}, Value: text}, nil
+	return xml.Attr{Name: xml.Name{Local: string('a'+r.id-PrefixAttributeA) + ":" + name}, Value: text}, nil
 }
 
 //
@@ -504,12 +496,6 @@ func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) 
 //(0x44-0x5D)
 type prefixDictionaryElementAZRecord struct {
 	elementRecordBase
-	prefixIndex byte
-	nameIndex   uint32
-}
-
-func (r *prefixDictionaryElementAZRecord) getName() string {
-	return fmt.Sprintf("PrefixDictionaryElement%s (%#x)", string(byte('A')+r.prefixIndex), 0x44+r.prefixIndex)
 }
 
 func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, error) {
@@ -517,14 +503,14 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: string('a'+r.prefixIndex) + ":" + name}}
+	element := xml.StartElement{Name: xml.Name{Local: string('a'+r.id-PrefixDictionaryElementA) + ":" + name}}
 
 	return r.readElementAttributes(element, d)
 }
 
 func (r *prefixDictionaryElementAZRecord) writeElement(e *encoder, element xml.StartElement) error {
-	e.bin.Write([]byte{0x44 + r.prefixIndex})
-	_, err := writeMultiByteInt31(e, r.nameIndex)
+	e.bin.Write([]byte{r.id})
+	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
 	return err
 }
 

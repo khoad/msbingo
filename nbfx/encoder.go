@@ -39,12 +39,12 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 	reader := bytes.NewReader([]byte(xmlString))
 	e.xml = xml.NewDecoder(reader)
 	token, err := e.xml.RawToken()
-	for err == nil {
+	for err == nil && token != nil {
 		record, err := e.getRecordFromToken(token)
 		if err != nil {
 			return e.bin.Bytes(), err
 		}
-		fmt.Println("Encode record", record.getName())
+		//fmt.Println("Encode record", record.getName())
 		if record.isElement() {
 			elementWriter := record.(elementRecordWriter)
 			err = elementWriter.writeElement(e, token.(xml.StartElement))
@@ -61,6 +61,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 }
 
 func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
+	//fmt.Println("getRecordFromToken", token)
 	switch token.(type) {
 	case xml.StartElement:
 		return e.getStartElementRecordFromToken(token.(xml.StartElement))
