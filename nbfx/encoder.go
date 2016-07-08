@@ -45,12 +45,19 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 			return e.bin.Bytes(), err
 		}
 		//fmt.Println("Encode record", record.getName())
-		if record.isElement() {
+		if record.isStartElement() {
+			fmt.Println("Encode elment", token)
 			elementWriter := record.(elementRecordWriter)
-			err = elementWriter.writeElement(e, token.(xml.StartElement))
-		} else {
+			fmt.Println("Writer is", elementWriter)
+			err = elementWriter.encodeElement(e, token.(xml.StartElement))
+		} else if record.isText() {
 			textWriter := record.(textRecordWriter)
-			err = textWriter.writeText(e)
+			err = textWriter.encodeText(e, token.(xml.CharData))
+		} else if record.isEndElement() {
+			elementWriter := record.(elementRecordWriter)
+			err = elementWriter.encodeElement(e, xml.StartElement{})
+		} else {
+			err = errors.New(fmt.Sprint("NotSupported: Encoding record", record))
 		}
 		if err != nil {
 			return e.bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
@@ -67,6 +74,8 @@ func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 		return e.getStartElementRecordFromToken(token.(xml.StartElement))
 	case xml.CharData:
 		return e.getTextRecordFromToken(token.(xml.CharData))
+	case xml.EndElement:
+		return records[EndElement], nil
 	}
 
 	tokenXmlBytes, err := xml.Marshal(token)
@@ -144,4 +153,13 @@ func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	}
 	n2, err := writeMultiByteInt31(e, q)
 	return n1 + n2, err
+}
+
+func writeChars32Text(e *encoder, text string) error {
+	_, err := e.bin.Write([]byte{Chars32Text})
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write([]byte(text))
+	return err
 }

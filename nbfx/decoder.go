@@ -48,15 +48,15 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
-		if rec.isElement() {
+		if rec.isStartElement() || rec.isEndElement() {
 			elementReader := rec.(elementRecordDecoder)
 			rec, err = elementReader.decodeElement(d)
-			//fmt.Println("Decoded Element", rec, err)
-		} else { // text record
-			//fmt.Println("Expecting Text Record and got", rec.getName())
+		} else if rec.isText() {
 			textReader := rec.(textRecordDecoder)
 			_, err = textReader.decodeText(d)
 			rec = nil
+		} else {
+			err = errors.New(fmt.Sprint("NotSupported: Decode record", rec))
 		}
 		if err == nil && rec == nil {
 			rec, err = getNextRecord(d)
@@ -361,7 +361,7 @@ func readListText(d *decoder) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if rec.isElement() || rec.isAttribute() {
+		if !rec.isText() {
 			return "", errors.New("Records within list must be TextRecord types, but found " + rec.getName())
 		}
 		if rec.getName() == records[EndListText].getName() {

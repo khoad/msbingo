@@ -20,7 +20,7 @@ func TestEncodeExample1(t *testing.T) {
 	}
 	actual, err := encoder.Encode(string(xmlBin))
 	if err != nil {
-		t.Error(err.Error())
+		t.Error(fmt.Sprint(err.Error() + " : Got ", actual))
 		return
 	}
 	assertBinEqual(t, actual, expected)
@@ -113,7 +113,8 @@ func assertBinEqual(t *testing.T, actual, expected []byte) {
 	for i, b := range actual {
 		if b != expected[i] {
 			fmt.Println("actual", actual, "expected", expected)
-			t.Error(fmt.Sprintf("%x differs from expected %x at index %d", actual, expected, i))
+			t.Error(fmt.Sprintf("%x\ndiffers from expected\n%x\nat index %d", actual, expected, i))
+			return
 		}
 	}
 }

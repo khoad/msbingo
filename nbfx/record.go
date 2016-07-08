@@ -4,13 +4,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 )
 
 type record interface {
-	isElement() bool
+	isStartElement() bool
+	isEndElement() bool
 	isAttribute() bool
+	isText() bool
 	getName() string
 }
 
@@ -19,7 +20,7 @@ type elementRecordDecoder interface {
 }
 
 type elementRecordWriter interface {
-	writeElement(e *encoder, element xml.StartElement) error
+	encodeElement(e *encoder, element xml.StartElement) error
 }
 
 type attributeRecordDecoder interface {
@@ -32,7 +33,7 @@ type textRecordDecoder interface {
 }
 
 type textRecordWriter interface {
-	writeText(e *encoder) error
+	encodeText(e *encoder, cd xml.CharData) error
 }
 
 type recordBase struct {
@@ -40,15 +41,17 @@ type recordBase struct {
 	id       byte
 }
 
-func (r *recordBase) isElement() bool   { return false }
+func (r *recordBase) isStartElement() bool   { return false }
+func (r *recordBase) isEndElement() bool { return false }
 func (r *recordBase) isAttribute() bool { return false }
+func (r *recordBase) isText() bool { return false }
 func (r *recordBase) getName() string { return r.name }
 
 type elementRecordBase struct {
 	recordBase
 }
 
-func (e *elementRecordBase) isElement() bool { return true }
+func (e *elementRecordBase) isStartElement() bool { return true }
 
 func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *decoder) (record, error) {
 	var peekRecord record
@@ -95,6 +98,10 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *d
 	return peekRecord, nil
 }
 
+func (r *elementRecordBase) encodeElement(e *encoder, element xml.StartElement) error {
+	return errors.New(fmt.Sprint("NotImplemented: encodeElement on", r))
+}
+
 type attributeRecordBase struct{
 	recordBase
 }
@@ -104,22 +111,23 @@ func (r *attributeRecordBase) isAttribute() bool { return true }
 type textRecordBase struct {
 	recordBase
 	withEndElement bool
-	charData       func(d *decoder) (string, error)
+	textReader       func(d *decoder) (string, error)
+	textWriter func(e *encoder, text string) error
 }
 
-func (r *textRecordBase) isElement() bool   { return false }
-func (r *textRecordBase) isAttribute() bool { return false }
+func (r *textRecordBase) isText() bool {
+	return true
+}
 
 func (r *textRecordBase) getName() string {
 	return fmt.Sprintf("%s (%#x)", r.name, r.id)
 }
 
 func (r *textRecordBase) readText(d *decoder) (string, error) {
-	text, err := r.charData(d)
-	if err != nil {
-		return "", err
+	if r.textReader == nil {
+		return "", errors.New(fmt.Sprint("Error", r, "textReader is nil"))
 	}
-	return text, nil
+	return r.textReader(d)
 }
 
 func (r *textRecordBase) decodeText(d *decoder) (string, error) {
@@ -139,8 +147,18 @@ func (r *textRecordBase) decodeText(d *decoder) (string, error) {
 	return text, nil
 }
 
-func (r *textRecordBase) writeText(e *encoder) error {
-	return errors.New("NotImplement: writeText for " + r.getName())
+func (r *textRecordBase) encodeText(e *encoder, cd xml.CharData) error {
+	if r.textWriter == nil {
+		b, err := xml.Marshal(cd)
+		errMsg := ""
+		if err != nil {
+			errMsg = err.Error()
+		}
+		str := string(b)
+		return errors.New(fmt.Sprint("NotImplement: writeText for " + r.getName() + " :: [" + str + "]", errMsg))
+	}
+
+	return r.textWriter(e, string(cd))
 }
 
 func getNextRecord(d *decoder) (record, error) {
@@ -165,7 +183,7 @@ var records = map[byte]record{}
 func initRecords() {
 	// Miscellaneous Records
 	records[EndElement] = &endElementRecord{elementRecordBase{recordBase{"EndElement",EndElement}}}
-	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false,nil}}
+	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false,nil,nil}}
 	records[Array] = &arrayRecord{elementRecordBase{recordBase{"Array",Array}}}
 
 	// Attribute Records
@@ -189,44 +207,44 @@ func initRecords() {
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
 	// Text Records
-	addTextRecord(ZeroText, "ZeroText", func(d *decoder) (string, error) { return "0", nil })
-	addTextRecord(OneText, "OneText", func(d *decoder) (string, error) { return "1", nil })
-	addTextRecord(FalseText, "FalseText", func(d *decoder) (string, error) { return "false", nil })
-	addTextRecord(TrueText, "TrueText", func(d *decoder) (string, error) { return "true", nil})
-	addTextRecord(Int8Text, "Int8Text", func(d *decoder) (string, error) { return readInt8Text(d) })
-	addTextRecord(Int16Text, "Int16Text", func(d *decoder) (string, error) { return readInt16Text(d) })
-	addTextRecord(Int32Text, "Int32Text", func(d *decoder) (string, error) { return readInt32Text(d) })
-	addTextRecord(Int64Text, "Int64Text", func(d *decoder) (string, error) { return readInt64Text(d) })
-	addTextRecord(FloatText, "FloatText", func(d *decoder) (string, error) { return readFloatText(d) })
-	addTextRecord(DoubleText, "DoubleText", func(d *decoder) (string, error) { return readDoubleText(d) })
-	addTextRecord(DecimalText, "DecimalText", func(d *decoder) (string, error) { return readDecimalText(d) })
-	addTextRecord(DateTimeText, "DateTimeText", func(d *decoder) (string, error) { return readDateTimeText(d) })
-	addTextRecord(Chars8Text, "Chars8Text", func(d *decoder) (string, error) { return readChars8Text(d) })
-	addTextRecord(Chars16Text, "Chars16Text", func(d *decoder) (string, error) { return readChars16Text(d) })
-	addTextRecord(Chars32Text, "Chars32Text", func(d *decoder) (string, error) { return readChars32Text(d) })
-	addTextRecord(Bytes8Text, "Bytes8Text", func(d *decoder) (string, error) { return readBytes8Text(d) })
-	addTextRecord(Bytes16Text, "Bytes16Text", func(d *decoder) (string, error) { return readBytes16Text(d) })
-	addTextRecord(Bytes32Text, "Bytes32Text", func(d *decoder) (string, error) { return readBytes32Text(d) })
-	addTextRecord(StartListText, "StartListText", func(d *decoder) (string, error) { return readListText(d) })
-	addTextRecord(EndListText, "EndListText", func(d *decoder) (string, error) { return "", nil })
-	addTextRecord(EmptyText, "EmptyText", func(d *decoder) (string, error) { return "", nil })
-	addTextRecord(DictionaryText, "DictionaryText", func(d *decoder) (string, error) { return readDictionaryString(d) })
-	addTextRecord(UniqueIdText, "UniqueIdText", func(d *decoder) (string, error) { return readUniqueIdText(d) })
-	addTextRecord(TimeSpanText, "TimeSpanText", func(d *decoder) (string, error) { return readTimeSpanText(d) })
-	addTextRecord(UuidText, "UuidText", func(d *decoder) (string, error) { return readUuidText(d) })
-	addTextRecord(UInt64Text, "UInt64Text", func(d *decoder) (string, error) { return readUInt64Text(d) })
-	addTextRecord(BoolText, "BoolText", func(d *decoder) (string, error) { return readBoolText(d) })
-	addTextRecord(UnicodeChars8Text, "UnicodeChars8Text", func(d *decoder) (string, error) { return readUnicodeChars8Text(d) })
-	addTextRecord(UnicodeChars16Text, "UnicodeChars16Text", func(d *decoder) (string, error) { return readUnicodeChars16Text(d) })
-	addTextRecord(UnicodeChars32Text, "UnicodeChars32Text", func(d *decoder) (string, error) { return readUnicodeChars32Text(d) })
-	addTextRecord(QNameDictionaryText, "QNameDictionaryText", func(d *decoder) (string, error) { return readQNameDictionaryText(d) })
+	addTextRecord(ZeroText, "ZeroText", func(d *decoder) (string, error) { return "0", nil }, nil)
+	addTextRecord(OneText, "OneText", func(d *decoder) (string, error) { return "1", nil }, nil)
+	addTextRecord(FalseText, "FalseText", func(d *decoder) (string, error) { return "false", nil }, nil)
+	addTextRecord(TrueText, "TrueText", func(d *decoder) (string, error) { return "true", nil}, nil)
+	addTextRecord(Int8Text, "Int8Text", func(d *decoder) (string, error) { return readInt8Text(d) }, nil)
+	addTextRecord(Int16Text, "Int16Text", func(d *decoder) (string, error) { return readInt16Text(d) }, nil)
+	addTextRecord(Int32Text, "Int32Text", func(d *decoder) (string, error) { return readInt32Text(d) }, nil)
+	addTextRecord(Int64Text, "Int64Text", func(d *decoder) (string, error) { return readInt64Text(d) }, nil)
+	addTextRecord(FloatText, "FloatText", func(d *decoder) (string, error) { return readFloatText(d) }, nil)
+	addTextRecord(DoubleText, "DoubleText", func(d *decoder) (string, error) { return readDoubleText(d) }, nil)
+	addTextRecord(DecimalText, "DecimalText", func(d *decoder) (string, error) { return readDecimalText(d) }, nil)
+	addTextRecord(DateTimeText, "DateTimeText", func(d *decoder) (string, error) { return readDateTimeText(d) }, nil)
+	addTextRecord(Chars8Text, "Chars8Text", func(d *decoder) (string, error) { return readChars8Text(d) }, nil)
+	addTextRecord(Chars16Text, "Chars16Text", func(d *decoder) (string, error) { return readChars16Text(d) }, nil)
+	addTextRecord(Chars32Text, "Chars32Text", func(d *decoder) (string, error) { return readChars32Text(d) }, func(e *encoder, text string) error { return writeChars32Text(e, text) })
+	addTextRecord(Bytes8Text, "Bytes8Text", func(d *decoder) (string, error) { return readBytes8Text(d) }, nil)
+	addTextRecord(Bytes16Text, "Bytes16Text", func(d *decoder) (string, error) { return readBytes16Text(d) }, nil)
+	addTextRecord(Bytes32Text, "Bytes32Text", func(d *decoder) (string, error) { return readBytes32Text(d) }, nil)
+	addTextRecord(StartListText, "StartListText", func(d *decoder) (string, error) { return readListText(d) }, nil)
+	addTextRecord(EndListText, "EndListText", func(d *decoder) (string, error) { return "", nil }, nil)
+	addTextRecord(EmptyText, "EmptyText", func(d *decoder) (string, error) { return "", nil }, nil)
+	addTextRecord(DictionaryText, "DictionaryText", func(d *decoder) (string, error) { return readDictionaryString(d) }, nil)
+	addTextRecord(UniqueIdText, "UniqueIdText", func(d *decoder) (string, error) { return readUniqueIdText(d) }, nil)
+	addTextRecord(TimeSpanText, "TimeSpanText", func(d *decoder) (string, error) { return readTimeSpanText(d) }, nil)
+	addTextRecord(UuidText, "UuidText", func(d *decoder) (string, error) { return readUuidText(d) }, nil)
+	addTextRecord(UInt64Text, "UInt64Text", func(d *decoder) (string, error) { return readUInt64Text(d) }, nil)
+	addTextRecord(BoolText, "BoolText", func(d *decoder) (string, error) { return readBoolText(d) }, nil)
+	addTextRecord(UnicodeChars8Text, "UnicodeChars8Text", func(d *decoder) (string, error) { return readUnicodeChars8Text(d) }, nil)
+	addTextRecord(UnicodeChars16Text, "UnicodeChars16Text", func(d *decoder) (string, error) { return readUnicodeChars16Text(d) }, nil)
+	addTextRecord(UnicodeChars32Text, "UnicodeChars32Text", func(d *decoder) (string, error) { return readUnicodeChars32Text(d) }, nil)
+	addTextRecord(QNameDictionaryText, "QNameDictionaryText", func(d *decoder) (string, error) { return readQNameDictionaryText(d) }, nil)
 
 	addAzRecords()
 }
 
-func addTextRecord(recordId byte, textName string, charData func(*decoder) (string, error)) {
-	records[recordId] = &textRecordBase{recordBase{name: textName, id: recordId}, false, charData}
-	records[recordId+1] = &textRecordBase{recordBase{name: textName + "WithEndElement", id: recordId + 1}, true, charData}
+func addTextRecord(recordId byte, textName string, textReader func(*decoder) (string, error), textWriter func(*encoder,string) error) {
+	records[recordId] = &textRecordBase{recordBase{name: textName, id: recordId}, false, textReader, textWriter}
+	records[recordId+1] = &textRecordBase{recordBase{name: textName + "WithEndElement", id: recordId + 1}, true, textReader, textWriter}
 }
 
 func addAzRecords() {
@@ -254,6 +272,14 @@ func (r *endElementRecord) getName() string {
 	return "EndElementRecord (0x01)"
 }
 
+func (r *endElementRecord) isStartElement() bool {
+	return false
+}
+
+func (r *endElementRecord) isEndElement() bool {
+	return true
+}
+
 func (r *endElementRecord) decodeElement(d *decoder) (record, error) {
 	item := d.elementStack.Pop()
 	element := item.(xml.StartElement)
@@ -262,8 +288,9 @@ func (r *endElementRecord) decodeElement(d *decoder) (record, error) {
 	return nil, err
 }
 
-func (r *endElementRecord) write(writer io.Writer) error {
-	return errors.New("NotImplemented: endElementRecord.write")
+func (r *endElementRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	_, err := e.bin.Write([]byte{r.id})
+	return err
 }
 
 //(0x04)
@@ -486,13 +513,6 @@ func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) 
 	return xml.Attr{Name: xml.Name{Local: string('a'+r.id-PrefixAttributeA) + ":" + name}, Value: text}, nil
 }
 
-//
-//func (r *prefixDictionaryAttributeAZRecord) write(writer io.Writer) error {
-//	writer.Write([]byte{0x0C + r.prefixIndex})
-//	_, err := writeMultiByteInt31(writer, r.nameIndex)
-//	return err
-//}
-
 //(0x44-0x5D)
 type prefixDictionaryElementAZRecord struct {
 	elementRecordBase
@@ -508,9 +528,13 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 	return r.readElementAttributes(element, d)
 }
 
-func (r *prefixDictionaryElementAZRecord) writeElement(e *encoder, element xml.StartElement) error {
+func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	//fmt.Println(fmt.Sprint("Writing PrefixDictionaryElement" + string('a' + PrefixDictionaryElementA), element))
 	e.bin.Write([]byte{r.id})
 	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
+	//if err != nil {
+	//	fmt.Println("Write PrefixDictionaryElement error", err.Error())
+	//}
 	return err
 }
 
@@ -579,10 +603,6 @@ func (r *dictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, 
 	return xml.Attr{Name: xml.Name{Local: "xmlns:" + name}, Value: val}, nil
 }
 
-func (r *dictionaryXmlnsAttributeRecord) write(writer io.Writer) error {
-	return errors.New("NotImplemented: dictionaryXmlnsAttributeRecord.write")
-}
-
 // 0x40
 type shortElementRecord struct {
 	elementRecordBase
@@ -602,9 +622,14 @@ func (r *shortElementRecord) decodeElement(d *decoder) (record, error) {
 	return r.readElementAttributes(element, d)
 }
 
-//func (r *shortElementRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: shortElementRecord.write")
-//}
+func (r *shortElementRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	_, err := e.bin.Write([]byte{ShortElement})
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, element.Name.Local)
+	return err
+}
 
 // 0x5E-0x77
 type prefixElementAZRecord struct {
@@ -625,7 +650,7 @@ func (r *prefixElementAZRecord) decodeElement(d *decoder) (record, error) {
 	return r.readElementAttributes(element, d)
 }
 
-func (r *prefixElementAZRecord) writeElement(e *encoder, element xml.StartElement) error {
+func (r *prefixElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
 	_, err := e.bin.Write([]byte{PrefixElementA + (r.id - PrefixElementA)})
 	if err != nil {
 		return err
@@ -657,10 +682,6 @@ func (r *elementRecord) decodeElement(d *decoder) (record, error) {
 	return r.readElementAttributes(element, d)
 }
 
-//func (r *elementRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: elementRecord.write")
-//}
-
 // 0x02
 type commentRecord struct {
 	textRecordBase
@@ -684,10 +705,6 @@ func (r *commentRecord) decodeText(d *decoder) (string, error) {
 	return text, nil
 }
 
-//func (r *commentRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: elementRecord.write")
-//}
-
 // 0x03
 type arrayRecord struct {
 	elementRecordBase
@@ -702,7 +719,7 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 	if err != nil {
 		return rec, err
 	}
-	if !rec.isElement() {
+	if !rec.isStartElement() {
 		return nil, errors.New("Element expected!")
 	}
 	elementDecoder := rec.(elementRecordDecoder)
@@ -744,7 +761,3 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 	}
 	return nil, nil
 }
-
-//func (r *arrayRecord) write(writer io.Writer) error {
-//	return errors.New("NotImplemented: elementRecord.write")
-//}
