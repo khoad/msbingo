@@ -10,6 +10,8 @@ import (
 
 type encoder struct {
 	dict        map[string]uint32
+	xml *xml.Decoder
+	bin *io.Writer
 }
 
 func (e *encoder) addDictionaryString(index uint32, value string) {
@@ -24,7 +26,7 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{make(map[string]uint32)}
+	encoder := &encoder{make(map[string]uint32), nil, nil}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			encoder.addDictionaryString(k, v)
@@ -34,29 +36,29 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 }
 
 func (e *encoder) Encode(xmlString string) ([]byte, error) {
+	bin := &bytes.Buffer{}
 	reader := bytes.NewReader([]byte(xmlString))
-	binBuffer := &bytes.Buffer{}
-	xmlDecoder := xml.NewDecoder(reader)
-	token, err := xmlDecoder.RawToken()
+	xml := xml.NewDecoder(reader)
+	token, err := xml.RawToken()
 	for err == nil {
 		record, err := e.getRecordFromToken(token)
 		if err != nil {
-			return binBuffer.Bytes(), err
+			return bin.Bytes(), err
 		}
 		fmt.Println("Encode record", record.getName())
 		if record.isElement() {
 			elementWriter := record.(elementRecordWriter)
-			err = elementWriter.writeElement(binBuffer, token)
+			err = elementWriter.writeElement(e)
 		} else {
 			textWriter := record.(textRecordWriter)
-			err = textWriter.writeText(binBuffer)
+			err = textWriter.writeText(e)
 		}
 		if err != nil {
-			return binBuffer.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
+			return bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
 		}
-		token, err = xmlDecoder.RawToken()
+		token, err = xml.RawToken()
 	}
-	return binBuffer.Bytes(), nil
+	return bin.Bytes(), nil
 }
 
 func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
@@ -90,30 +92,28 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 	if len(prefix) == 1 && byte(prefix[0]) >= byte('a') && byte(prefix[0]) <= byte('z') {
 		prefixIndex = int(byte(prefix[0]) - byte('a'))
 	}
-	var nameIndex uint32
 	isNameIndexAssigned := false
-	if i, ok := e.dict[name]; ok {
-		nameIndex = i
+	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
 
 	if prefix == "" {
 		if !isNameIndexAssigned {
-			return &shortElementRecord{name: name}, nil
+			return records[ShortElement], nil
 		} else {
-			return &dictionaryElementRecord{nameIndex: nameIndex}, nil
+			return records[ShortDictionaryElement], nil
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return &prefixElementAZRecord{prefixIndex: byte(prefixIndex), name: name}, nil
+			return records[PrefixElementA + byte(prefixIndex)], nil
 		} else {
-			return &prefixDictionaryElementAZRecord{prefixIndex: byte(prefixIndex), nameIndex: nameIndex}, nil
+			return records[PrefixDictionaryElementA+ byte(prefixIndex)], nil
 		}
 	} else {
 		if !isNameIndexAssigned {
-			return &elementRecord{prefix: prefix, name: name}, nil
+			return records[Element], nil
 		} else {
-			return &dictionaryElementRecord{prefix: prefix, nameIndex: nameIndex}, nil
+			return records[DictionaryElement], nil
 		}
 	}
 	return nil, errors.New("getStartElementRecordFromToken unable to resolve required xml.Token")

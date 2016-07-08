@@ -555,7 +555,8 @@ func testReadFloatTextSpecialValue(t *testing.T, num float32, expected string) {
 	buf := &bytes.Buffer{}
 	binary.Write(buf, binary.LittleEndian, &num)
 	r := bytes.NewReader(buf.Bytes())
-	actual, err := readFloatText(r)
+	d := &decoder{ bin: r}
+	actual, err := readFloatText(d)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -566,7 +567,8 @@ func testReadDoubleTextSpecialValue(t *testing.T, num float64, expected string) 
 	buf := &bytes.Buffer{}
 	binary.Write(buf, binary.LittleEndian, &num)
 	r := bytes.NewReader(buf.Bytes())
-	actual, err := readDoubleText(r)
+	d := &decoder{bin:r}
+	actual, err := readDoubleText(d)
 	if err != nil {
 		t.Error(err.Error())
 	}

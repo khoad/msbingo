@@ -17,6 +17,8 @@ import (
 type decoder struct {
 	dict        map[uint32]string
 	elementStack Stack
+	bin *bytes.Reader
+	xml *xml.Encoder
 }
 
 func (d *decoder) addDictionaryString(index uint32, value string) {
@@ -31,7 +33,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{make(map[uint32]string), Stack{}}
+	decoder := &decoder{make(map[uint32]string), Stack{}, nil, nil}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.addDictionaryString(k, v)
@@ -41,27 +43,27 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 }
 
 func (d *decoder) Decode(bin []byte) (string, error) {
-	reader := bytes.NewReader(bin)
+	d.bin = bytes.NewReader(bin)
 	xmlBuf := &bytes.Buffer{}
-	xmlEncoder := xml.NewEncoder(xmlBuf)
-	rec, err := getNextRecord(d, reader)
+	d.xml = xml.NewEncoder(xmlBuf)
+	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
 		if rec.isElement() {
 			elementReader := rec.(elementRecordDecoder)
-			rec, err = elementReader.decodeElement(xmlEncoder, reader)
-			fmt.Println("Decoded Element", rec, err)
+			rec, err = elementReader.decodeElement(d)
+			//fmt.Println("Decoded Element", rec, err)
 		} else { // text record
 			//fmt.Println("Expecting Text Record and got", rec.getName())
 			textReader := rec.(textRecordDecoder)
-			_, err = textReader.decodeText(xmlEncoder, reader)
+			_, err = textReader.decodeText(d)
 			rec = nil
 		}
 		if err == nil && rec == nil {
-			rec, err = getNextRecord(d, reader)
+			rec, err = getNextRecord(d)
 		}
 	}
-	fmt.Println("Exiting main decoder loop...")
-	xmlEncoder.Flush()
+	//fmt.Println("Exiting main decoder loop...")
+	d.xml.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err
 	}
@@ -102,9 +104,9 @@ func readString(reader *bytes.Reader) (string, error) {
 
 var b64 = base64.StdEncoding.WithPadding(base64.StdPadding)
 
-func readBytes8Text(reader *bytes.Reader) (string, error) {
+func readBytes8Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 1)
+	buf, err := readBytes(d.bin, 1)
 	if err != nil {
 		return "", err
 	}
@@ -113,13 +115,13 @@ func readBytes8Text(reader *bytes.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	buf, err = readBytes(reader, uint32(val))
+	buf, err = readBytes(d.bin, uint32(val))
 	return b64.EncodeToString(buf.Bytes()), err
 }
 
-func readBytes16Text(reader *bytes.Reader) (string, error) {
+func readBytes16Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 2)
+	buf, err := readBytes(d.bin, 2)
 	if err != nil {
 		return "", err
 	}
@@ -128,13 +130,13 @@ func readBytes16Text(reader *bytes.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	buf, err = readBytes(reader, uint32(val))
+	buf, err = readBytes(d.bin, uint32(val))
 	return b64.EncodeToString(buf.Bytes()), err
 }
 
-func readBytes32Text(reader *bytes.Reader) (string, error) {
+func readBytes32Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 4)
+	buf, err := readBytes(d.bin, 4)
 	if err != nil {
 		return "", err
 	}
@@ -143,14 +145,14 @@ func readBytes32Text(reader *bytes.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	buf, err = readBytes(reader, val)
+	buf, err = readBytes(d.bin, val)
 	return b64.EncodeToString(buf.Bytes()), err
 }
 
-func readChars8Text(reader *bytes.Reader) (string, error) {
-	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readChars8Text(d *decoder) (string, error) {
+	return readStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 1)
+		buf, err := readBytes(d.bin, 1)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -160,10 +162,10 @@ func readChars8Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readChars16Text(reader *bytes.Reader) (string, error) {
-	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readChars16Text(d *decoder) (string, error) {
+	return readStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 2)
+		buf, err := readBytes(d.bin, 2)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -173,10 +175,10 @@ func readChars16Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readChars32Text(reader *bytes.Reader) (string, error) {
-	return readStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readChars32Text(d *decoder) (string, error) {
+	return readStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 4)
+		buf, err := readBytes(d.bin, 4)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -186,10 +188,10 @@ func readChars32Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readUnicodeChars8Text(reader *bytes.Reader) (string, error) {
-	return readUnicodeStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readUnicodeChars8Text(d *decoder) (string, error) {
+	return readUnicodeStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 1)
+		buf, err := readBytes(d.bin, 1)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -200,10 +202,10 @@ func readUnicodeChars8Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readUnicodeChars16Text(reader *bytes.Reader) (string, error) {
-	return readUnicodeStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readUnicodeChars16Text(d *decoder) (string, error) {
+	return readUnicodeStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 2)
+		buf, err := readBytes(d.bin, 2)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -214,10 +216,10 @@ func readUnicodeChars16Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readUnicodeChars32Text(reader *bytes.Reader) (string, error) {
-	return readUnicodeStringBytes(reader, func(r *bytes.Reader) (uint32, error) {
+func readUnicodeChars32Text(d *decoder) (string, error) {
+	return readUnicodeStringBytes(d.bin, func(r *bytes.Reader) (uint32, error) {
 		var err error
-		buf, err := readBytes(reader, 4)
+		buf, err := readBytes(d.bin, 4)
 		if err != nil {
 			return uint32(0), err
 		}
@@ -228,14 +230,14 @@ func readUnicodeChars32Text(reader *bytes.Reader) (string, error) {
 	})
 }
 
-func readUnicodeStringBytes(reader *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
-	len, err := readLenFunc(reader)
+func readUnicodeStringBytes(r *bytes.Reader, readLenFunc func(r *bytes.Reader) (uint32, error)) (string, error) {
+	len, err := readLenFunc(r)
 	if err != nil {
 		return "", err
 	}
 	runes := []rune{}
 	for i := uint32(0); i < len; {
-		runeBuf, err := readBytes(reader, 2)
+		runeBuf, err := readBytes(r, 2)
 		if err != nil {
 			return string(runes), err
 		}
@@ -265,9 +267,9 @@ func readBytes(reader *bytes.Reader, numBytes uint32) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-func readInt8Text(reader *bytes.Reader) (string, error) {
+func readInt8Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 1)
+	buf, err := readBytes(d.bin, 1)
 	if err != nil {
 		return "", err
 	}
@@ -276,9 +278,9 @@ func readInt8Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
-func readInt16Text(reader *bytes.Reader) (string, error) {
+func readInt16Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 2)
+	buf, err := readBytes(d.bin, 2)
 	if err != nil {
 		return "", err
 	}
@@ -287,9 +289,9 @@ func readInt16Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
-func readInt32Text(reader *bytes.Reader) (string, error) {
+func readInt32Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 4)
+	buf, err := readBytes(d.bin, 4)
 	if err != nil {
 		return "", err
 	}
@@ -298,9 +300,9 @@ func readInt32Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
-func readInt64Text(reader *bytes.Reader) (string, error) {
+func readInt64Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 8)
+	buf, err := readBytes(d.bin, 8)
 	if err != nil {
 		return "", err
 	}
@@ -309,9 +311,9 @@ func readInt64Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
-func readUInt64Text(reader *bytes.Reader) (string, error) {
+func readUInt64Text(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 8)
+	buf, err := readBytes(d.bin, 8)
 	if err != nil {
 		return "", err
 	}
@@ -320,9 +322,9 @@ func readUInt64Text(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%d", val), nil
 }
 
-func readFloatText(reader *bytes.Reader) (string, error) {
+func readFloatText(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 4)
+	buf, err := readBytes(d.bin, 4)
 	if err != nil {
 		return "", err
 	}
@@ -336,9 +338,9 @@ func readFloatText(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%v", val), nil
 }
 
-func readDoubleText(reader *bytes.Reader) (string, error) {
+func readDoubleText(d *decoder) (string, error) {
 	var err error
-	buf, err := readBytes(reader, 8)
+	buf, err := readBytes(d.bin, 8)
 	if err != nil {
 		return "", err
 	}
@@ -352,21 +354,21 @@ func readDoubleText(reader *bytes.Reader) (string, error) {
 	return fmt.Sprintf("%v", val), nil
 }
 
-func readListText(reader *bytes.Reader, d *decoder) (string, error) {
+func readListText(d *decoder) (string, error) {
 	items := []string{}
 	for {
-		rec, err := getNextRecord(d, reader)
+		rec, err := getNextRecord(d)
 		if err != nil {
 			return "", err
 		}
 		if rec.isElement() || rec.isAttribute() {
 			return "", errors.New("Records within list must be TextRecord types, but found " + rec.getName())
 		}
-		if rec.getName() == records[0xA6](d).getName() {
+		if rec.getName() == records[EndListText].getName() {
 			break
 		}
 		textDecoder := rec.(textRecordDecoder)
-		item, err := textDecoder.readText(reader)
+		item, err := textDecoder.readText(d)
 		if err != nil {
 			return "", err
 		}
@@ -375,11 +377,11 @@ func readListText(reader *bytes.Reader, d *decoder) (string, error) {
 	return strings.Join(items, " "), nil
 }
 
-func readDecimalText(reader *bytes.Reader) (string, error) {
+func readDecimalText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: DecimalText")
 }
 
-func readDateTimeText(reader *bytes.Reader) (string, error) {
+func readDateTimeText(d *decoder) (string, error) {
 	//bin, err := readBytes(reader, 8)
 	//if err != nil {
 	//	return "", err
@@ -394,7 +396,7 @@ func readDateTimeText(reader *bytes.Reader) (string, error) {
 	return "", errors.New("NotImplemented: DateTimeText")
 }
 
-func readUniqueIdText(reader *bytes.Reader) (string, error) {
+func readUniqueIdText(d *decoder) (string, error) {
 	//var err error
 	//buf, err := readBytes(reader, 16)
 	//if err != nil {
@@ -409,42 +411,42 @@ func readUniqueIdText(reader *bytes.Reader) (string, error) {
 	return "", errors.New("NotImplemented: UniqueIdText")
 }
 
-func readUuidText(reader *bytes.Reader) (string, error) {
+func readUuidText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: UuidText")
 }
 
-func readTimeSpanText(reader *bytes.Reader) (string, error) {
+func readTimeSpanText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: TimeSpanText")
 }
 
-func readBoolText(reader *bytes.Reader) (string, error) {
-	b, err := reader.ReadByte()
+func readBoolText(d *decoder) (string, error) {
+	b, err := d.bin.ReadByte()
 	if err != nil {
 		return "", err
 	}
-	if b == 0x00 {
+	if b == 0 {
 		return "false", nil
-	} else if b == 0x01 {
+	} else if b == 1 {
 		return "true", nil
 	}
-	return "", errors.New("BoolText record byte must be 0x00 or 0x01")
+	return "", errors.New("BoolText record byte must be 0 or 1")
 }
 
-func readQNameDictionaryText(reader *bytes.Reader, d *decoder) (string, error) {
-	b, err := reader.ReadByte()
+func readQNameDictionaryText(d *decoder) (string, error) {
+	b, err := d.bin.ReadByte()
 	if err != nil {
 		return "", err
 	}
 	prefix := string('a' + b)
-	name, err := readDictionaryString(reader, d)
+	name, err := readDictionaryString(d)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%s:%s", prefix, name), nil
 }
 
-func readDictionaryString(reader *bytes.Reader, d *decoder) (string, error) {
-	key, err := readMultiByteInt31(reader)
+func readDictionaryString(d *decoder) (string, error) {
+	key, err := readMultiByteInt31(d.bin)
 	if err != nil {
 		return "", err
 	}
