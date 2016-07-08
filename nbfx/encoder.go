@@ -11,6 +11,7 @@ type encoder struct {
 	dict        map[string]uint32
 	xml *xml.Decoder
 	bin *bytes.Buffer
+	tokenBuffer *Queue
 }
 
 func (e *encoder) addDictionaryString(index uint32, value string) {
@@ -25,7 +26,7 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{make(map[string]uint32), nil, nil}
+	encoder := &encoder{make(map[string]uint32), nil, nil, &Queue{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			encoder.addDictionaryString(k, v)
@@ -34,11 +35,31 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 	return encoder
 }
 
+func (e *encoder) popToken() (xml.Token, error) {
+	var token xml.Token
+	var err error
+	if e.tokenBuffer.Len() > 0 {
+		token = e.tokenBuffer.Dequeue().(xml.Token)
+		//fmt.Println("Popped", token)
+		return token, err
+	}
+	token, err = e.xml.RawToken()
+	if err == nil {
+		//fmt.Println("Popped", token)
+	}
+	token = xml.CopyToken(token) // make the token immutable (see doc for xml.Decoder.Token())
+	return token, err
+}
+
+func (e *encoder) pushToken(token xml.Token) {
+	e.tokenBuffer.Enqueue(token)
+}
+
 func (e *encoder) Encode(xmlString string) ([]byte, error) {
 	e.bin = &bytes.Buffer{}
 	reader := bytes.NewReader([]byte(xmlString))
 	e.xml = xml.NewDecoder(reader)
-	token, err := e.xml.RawToken()
+	token, err := e.popToken()
 	for err == nil && token != nil {
 		record, err := e.getRecordFromToken(token)
 		if err != nil {
@@ -46,9 +67,8 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		}
 		//fmt.Println("Encode record", record.getName())
 		if record.isStartElement() {
-			fmt.Println("Encode elment", token)
+			//fmt.Println("Encode element", token)
 			elementWriter := record.(elementRecordEncoder)
-			fmt.Println("Writer is", elementWriter)
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
 			textWriter := record.(textRecordEncoder)
@@ -62,7 +82,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		if err != nil {
 			return e.bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
 		}
-		token, err = e.xml.RawToken()
+		token, err = e.popToken()
 	}
 	return e.bin.Bytes(), nil
 }
@@ -89,11 +109,47 @@ func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 }
 
 func (e *encoder) getTextRecordFromToken(cd xml.CharData) (record, error) {
-	return records[Chars32Text], nil
+	withEndElement := false
+	next, _ := e.popToken()
+	switch next.(type) {
+	case xml.EndElement:
+		withEndElement = true
+	}
+	//fmt.Println("getTextRecordFromToken", string(cd), next, withEndElement)
+	text := string(cd)
+	if !withEndElement {
+		e.pushToken(next)
+	}
+	return e.getTextRecordFromText(text, withEndElement)
 }
 
-func (e *encoder) getTextRecordFromText(text string) (record, error) {
-	return records[Chars32Text], nil
+func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (record, error) {
+	var id byte
+	id = 0x00
+	if text == "" {
+		id = EmptyText
+	} else if text == "0" {
+		id = ZeroText
+	} else if text == "1" {
+		id = OneText
+	} else if text == "false" {
+		id = FalseText
+	} else if text == "true" {
+		id = TrueText
+	} else {
+		if _, ok := e.dict[text]; ok {
+			id = DictionaryText
+		} else {
+			id = Chars8Text
+		}
+	}
+	if id != 0 && withEndElement {
+		id += 1
+	}
+	if rec, ok := records[id]; ok {
+		return rec, nil
+	}
+	return nil, errors.New(fmt.Sprintf("Unknown text record id %#X for %s withEndElement %v", id, text, withEndElement))
 }
 
 func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) (record, error) {
@@ -145,7 +201,7 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 		isNameIndexAssigned = true
 	}
 
-	fmt.Println("getAttributeRecordFromToken", prefix, name, isXmlns, prefixIndex, isNameIndexAssigned)
+	//fmt.Println("getAttributeRecordFromToken", prefix, name, isXmlns, prefixIndex, isNameIndexAssigned)
 
 	if prefix == "" {
 		if isXmlns {
@@ -219,11 +275,16 @@ func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	return n1 + n2, err
 }
 
+func writeChars8Text(e *encoder, text string) error {
+	bytes := []byte(text)
+	writeMultiByteInt31(e, uint32(len(bytes)))
+	_, err := e.bin.Write(bytes)
+	return err
+}
+
 func writeChars32Text(e *encoder, text string) error {
-	_, err := e.bin.Write([]byte{Chars32Text})
-	if err != nil {
-		return err
-	}
-	_, err = e.bin.Write([]byte(text))
+	bytes := []byte(text)
+	writeMultiByteInt31(e, uint32(len(bytes)))
+	_, err := e.bin.Write(bytes)
 	return err
 }

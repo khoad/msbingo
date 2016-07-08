@@ -184,16 +184,19 @@ func (r *textRecordBase) encodeCharData(e *encoder, cd xml.CharData) error {
 			errMsg = err.Error()
 		}
 		str := string(b)
-		return errors.New(fmt.Sprint("NotImplement: writeText for " + r.getName() + " :: [" + str + "]", errMsg))
+		return errors.New(fmt.Sprint("NotImplemented: writeText for " + r.getName() + " :: [" + str + "]", errMsg))
 	}
 
-	return r.textWriter(e, string(cd))
+	//fmt.Println("Encode text", string(cd), r.withEndElement, r.id)
+	return r.encodeText(e, string(cd))
 }
 
 func (r *textRecordBase) encodeText(e *encoder, text string) error {
 	if r.textWriter == nil {
-		return errors.New("NotImplement: writeText for " + r.getName())
+		return errors.New("NotImplemented: writeText for " + r.getName())
 	}
+
+	e.bin.WriteByte(r.id)
 
 	return r.textWriter(e, text)
 }
@@ -244,8 +247,8 @@ func initRecords() {
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
 	// Text Records
-	addTextRecord(ZeroText, "ZeroText", func(d *decoder) (string, error) { return "0", nil }, nil)
-	addTextRecord(OneText, "OneText", func(d *decoder) (string, error) { return "1", nil }, nil)
+	addTextRecord(ZeroText, "ZeroText", func(d *decoder) (string, error) { return "0", nil }, func(e *encoder, text string) error { return nil })
+	addTextRecord(OneText, "OneText", func(d *decoder) (string, error) { return "1", nil }, func(e *encoder, text string) error { return nil })
 	addTextRecord(FalseText, "FalseText", func(d *decoder) (string, error) { return "false", nil }, nil)
 	addTextRecord(TrueText, "TrueText", func(d *decoder) (string, error) { return "true", nil}, nil)
 	addTextRecord(Int8Text, "Int8Text", func(d *decoder) (string, error) { return readInt8Text(d) }, nil)
@@ -256,7 +259,7 @@ func initRecords() {
 	addTextRecord(DoubleText, "DoubleText", func(d *decoder) (string, error) { return readDoubleText(d) }, nil)
 	addTextRecord(DecimalText, "DecimalText", func(d *decoder) (string, error) { return readDecimalText(d) }, nil)
 	addTextRecord(DateTimeText, "DateTimeText", func(d *decoder) (string, error) { return readDateTimeText(d) }, nil)
-	addTextRecord(Chars8Text, "Chars8Text", func(d *decoder) (string, error) { return readChars8Text(d) }, nil)
+	addTextRecord(Chars8Text, "Chars8Text", func(d *decoder) (string, error) { return readChars8Text(d) }, func(e *encoder, text string) error { return writeChars8Text(e, text) })
 	addTextRecord(Chars16Text, "Chars16Text", func(d *decoder) (string, error) { return readChars16Text(d) }, nil)
 	addTextRecord(Chars32Text, "Chars32Text", func(d *decoder) (string, error) { return readChars32Text(d) }, func(e *encoder, text string) error { return writeChars32Text(e, text) })
 	addTextRecord(Bytes8Text, "Bytes8Text", func(d *decoder) (string, error) { return readBytes8Text(d) }, nil)
@@ -534,7 +537,8 @@ func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml
 	if err != nil {
 		return err
 	}
-	textRecord, err := e.getTextRecordFromText(attr.Value)
+	textRecord, err := e.getTextRecordFromText(attr.Value, false)
+	//fmt.Println("prefixDictionaryAttributeAZRecord gotTextRecord", textRecord)
 	if err != nil {
 		return err
 	}
@@ -583,6 +587,7 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 }
 
 func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	//fmt.Println("--->", element, e.bin)
 	e.bin.Write([]byte{r.id})
 	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
 	err = r.encodeAttributes(e, element.Attr)
