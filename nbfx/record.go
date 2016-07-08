@@ -37,7 +37,8 @@ type textRecordDecoder interface {
 }
 
 type textRecordEncoder interface {
-	encodeText(e *encoder, cd xml.CharData) error
+	encodeCharData(e *encoder, cd xml.CharData) error
+	encodeText(e *encoder, text string) error
 }
 
 type recordBase struct {
@@ -175,7 +176,7 @@ func (r *textRecordBase) decodeText(d *decoder) (string, error) {
 	return text, nil
 }
 
-func (r *textRecordBase) encodeText(e *encoder, cd xml.CharData) error {
+func (r *textRecordBase) encodeCharData(e *encoder, cd xml.CharData) error {
 	if r.textWriter == nil {
 		b, err := xml.Marshal(cd)
 		errMsg := ""
@@ -187,6 +188,14 @@ func (r *textRecordBase) encodeText(e *encoder, cd xml.CharData) error {
 	}
 
 	return r.textWriter(e, string(cd))
+}
+
+func (r *textRecordBase) encodeText(e *encoder, text string) error {
+	if r.textWriter == nil {
+		return errors.New("NotImplement: writeText for " + r.getName())
+	}
+
+	return r.textWriter(e, text)
 }
 
 func getNextRecord(d *decoder) (record, error) {
@@ -516,6 +525,23 @@ func (r *prefixDictionaryAttributeAZRecord) decodeAttribute(d *decoder) (xml.Att
 	return xml.Attr{Name: xml.Name{Local: string('a'+r.id-PrefixDictionaryAttributeA) + ":" + name}, Value: text}, nil
 }
 
+func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeDictionaryString(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+	textRecord, err := e.getTextRecordFromText(attr.Value)
+	if err != nil {
+		return err
+	}
+	textEncoder := textRecord.(textRecordEncoder)
+	return textEncoder.encodeText(e, attr.Value)
+}
+
 //(0x26-0x3F)
 type prefixAttributeAZRecord struct {
 	attributeRecordBase
@@ -629,7 +655,7 @@ func (r *dictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, 
 }
 
 func (r *dictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
-	err := e.bin.WriteByte(DictionaryXmlnsAttribute)
+	err := e.bin.WriteByte(r.id)
 	if err != nil {
 		return err
 	}

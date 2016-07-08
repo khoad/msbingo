@@ -52,7 +52,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
 			textWriter := record.(textRecordEncoder)
-			err = textWriter.encodeText(e, token.(xml.CharData))
+			err = textWriter.encodeCharData(e, token.(xml.CharData))
 		} else if record.isEndElement() {
 			elementWriter := record.(elementRecordEncoder)
 			err = elementWriter.encodeElement(e, xml.StartElement{})
@@ -89,6 +89,10 @@ func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 }
 
 func (e *encoder) getTextRecordFromToken(cd xml.CharData) (record, error) {
+	return records[Chars32Text], nil
+}
+
+func (e *encoder) getTextRecordFromText(text string) (record, error) {
 	return records[Chars32Text], nil
 }
 
