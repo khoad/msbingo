@@ -32,13 +32,13 @@ type attributeRecordEncoder interface {
 }
 
 type textRecordDecoder interface {
-	decodeText(d *decoder) (string, error)
+	decodeText(d *decoder, trd textRecordDecoder) (string, error)
 	readText(d *decoder) (string, error)
 }
 
 type textRecordEncoder interface {
-	encodeCharData(e *encoder, cd xml.CharData) error
-	encodeText(e *encoder, text string) error
+	encodeText(e *encoder, tre textRecordEncoder, text string) error
+	writeText(e *encoder, text string) error
 }
 
 type recordBase struct {
@@ -91,7 +91,6 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *d
 			rec = nil
 		}
 	}
-	//fmt.Println("got next record", peekRecord, err)
 
 	err = d.xml.EncodeToken(element)
 	if err != nil {
@@ -140,27 +139,23 @@ func (r *attributeRecordBase) encodeAttribute(e *encoder, attr xml.Attr) error {
 type textRecordBase struct {
 	recordBase
 	withEndElement bool
-	textReader       func(d *decoder) (string, error)
-	textWriter func(e *encoder, text string) error
 }
 
 func (r *textRecordBase) isText() bool {
 	return true
 }
 
-func (r *textRecordBase) getName() string {
-	return fmt.Sprintf("%s (%#x)", r.name, r.id)
-}
-
 func (r *textRecordBase) readText(d *decoder) (string, error) {
-	if r.textReader == nil {
-		return "", errors.New(fmt.Sprint("Error", r, "textReader is nil"))
-	}
-	return r.textReader(d)
+	return "", errors.New(fmt.Sprintf("NotImplemented: %v.readText %v", r.name, r))
 }
 
-func (r *textRecordBase) decodeText(d *decoder) (string, error) {
-	text, err := r.readText(d)
+func (r *textRecordBase) writeText(e *encoder, text string) error {
+	return errors.New("NotImplemented: " + r.name + ".writeText")
+}
+
+func (r *textRecordBase) decodeText(d *decoder, trd textRecordDecoder) (string, error) {
+	// This is an ugly hack to allow polymorphic readText behavior
+	text, err := trd.readText(d)
 	if err != nil {
 		return "", err
 	}
@@ -176,29 +171,18 @@ func (r *textRecordBase) decodeText(d *decoder) (string, error) {
 	return text, nil
 }
 
-func (r *textRecordBase) encodeCharData(e *encoder, cd xml.CharData) error {
-	if r.textWriter == nil {
-		b, err := xml.Marshal(cd)
-		errMsg := ""
-		if err != nil {
-			errMsg = err.Error()
-		}
-		str := string(b)
-		return errors.New(fmt.Sprint("NotImplemented: writeText for " + r.getName() + " :: [" + str + "]", errMsg))
+func (r *textRecordBase) encodeText(e *encoder, tre textRecordEncoder, text string) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
 	}
 
-	//fmt.Println("Encode text", string(cd), r.withEndElement, r.id)
-	return r.encodeText(e, string(cd))
-}
-
-func (r *textRecordBase) encodeText(e *encoder, text string) error {
-	if r.textWriter == nil {
-		return errors.New("NotImplemented: writeText for " + r.getName())
+	err = tre.writeText(e, text)
+	if err != nil {
+		return err
 	}
 
-	e.bin.WriteByte(r.id)
-
-	return r.textWriter(e, text)
+	return nil
 }
 
 func getNextRecord(d *decoder) (record, error) {
@@ -223,7 +207,7 @@ var records = map[byte]record{}
 func initRecords() {
 	// Miscellaneous Records
 	records[EndElement] = &endElementRecord{elementRecordBase{recordBase{"EndElement",EndElement}}}
-	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false,nil,nil}}
+	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false}}
 	records[Array] = &arrayRecord{elementRecordBase{recordBase{"Array",Array}}}
 
 	// Attribute Records
@@ -247,44 +231,70 @@ func initRecords() {
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
 	// Text Records
-	addTextRecord(ZeroText, "ZeroText", func(d *decoder) (string, error) { return "0", nil }, func(e *encoder, text string) error { return nil })
-	addTextRecord(OneText, "OneText", func(d *decoder) (string, error) { return "1", nil }, func(e *encoder, text string) error { return nil })
-	addTextRecord(FalseText, "FalseText", func(d *decoder) (string, error) { return "false", nil }, nil)
-	addTextRecord(TrueText, "TrueText", func(d *decoder) (string, error) { return "true", nil}, nil)
-	addTextRecord(Int8Text, "Int8Text", func(d *decoder) (string, error) { return readInt8Text(d) }, nil)
-	addTextRecord(Int16Text, "Int16Text", func(d *decoder) (string, error) { return readInt16Text(d) }, nil)
-	addTextRecord(Int32Text, "Int32Text", func(d *decoder) (string, error) { return readInt32Text(d) }, nil)
-	addTextRecord(Int64Text, "Int64Text", func(d *decoder) (string, error) { return readInt64Text(d) }, nil)
-	addTextRecord(FloatText, "FloatText", func(d *decoder) (string, error) { return readFloatText(d) }, nil)
-	addTextRecord(DoubleText, "DoubleText", func(d *decoder) (string, error) { return readDoubleText(d) }, nil)
-	addTextRecord(DecimalText, "DecimalText", func(d *decoder) (string, error) { return readDecimalText(d) }, nil)
-	addTextRecord(DateTimeText, "DateTimeText", func(d *decoder) (string, error) { return readDateTimeText(d) }, nil)
-	addTextRecord(Chars8Text, "Chars8Text", func(d *decoder) (string, error) { return readChars8Text(d) }, func(e *encoder, text string) error { return writeChars8Text(e, text) })
-	addTextRecord(Chars16Text, "Chars16Text", func(d *decoder) (string, error) { return readChars16Text(d) }, nil)
-	addTextRecord(Chars32Text, "Chars32Text", func(d *decoder) (string, error) { return readChars32Text(d) }, func(e *encoder, text string) error { return writeChars32Text(e, text) })
-	addTextRecord(Bytes8Text, "Bytes8Text", func(d *decoder) (string, error) { return readBytes8Text(d) }, nil)
-	addTextRecord(Bytes16Text, "Bytes16Text", func(d *decoder) (string, error) { return readBytes16Text(d) }, nil)
-	addTextRecord(Bytes32Text, "Bytes32Text", func(d *decoder) (string, error) { return readBytes32Text(d) }, nil)
-	addTextRecord(StartListText, "StartListText", func(d *decoder) (string, error) { return readListText(d) }, nil)
-	addTextRecord(EndListText, "EndListText", func(d *decoder) (string, error) { return "", nil }, nil)
-	addTextRecord(EmptyText, "EmptyText", func(d *decoder) (string, error) { return "", nil }, nil)
-	addTextRecord(DictionaryText, "DictionaryText", func(d *decoder) (string, error) { return readDictionaryString(d) }, nil)
-	addTextRecord(UniqueIdText, "UniqueIdText", func(d *decoder) (string, error) { return readUniqueIdText(d) }, nil)
-	addTextRecord(TimeSpanText, "TimeSpanText", func(d *decoder) (string, error) { return readTimeSpanText(d) }, nil)
-	addTextRecord(UuidText, "UuidText", func(d *decoder) (string, error) { return readUuidText(d) }, nil)
-	addTextRecord(UInt64Text, "UInt64Text", func(d *decoder) (string, error) { return readUInt64Text(d) }, nil)
-	addTextRecord(BoolText, "BoolText", func(d *decoder) (string, error) { return readBoolText(d) }, nil)
-	addTextRecord(UnicodeChars8Text, "UnicodeChars8Text", func(d *decoder) (string, error) { return readUnicodeChars8Text(d) }, nil)
-	addTextRecord(UnicodeChars16Text, "UnicodeChars16Text", func(d *decoder) (string, error) { return readUnicodeChars16Text(d) }, nil)
-	addTextRecord(UnicodeChars32Text, "UnicodeChars32Text", func(d *decoder) (string, error) { return readUnicodeChars32Text(d) }, nil)
-	addTextRecord(QNameDictionaryText, "QNameDictionaryText", func(d *decoder) (string, error) { return readQNameDictionaryText(d) }, nil)
+	records[ZeroText] = &zeroTextRecord{textRecordBase{recordBase{"ZeroText", ZeroText},false}}
+	records[ZeroTextWithEndElement] = &zeroTextRecord{textRecordBase{recordBase{"ZeroTextWithEndElement", ZeroTextWithEndElement},true}}
+	records[OneText] = &oneTextRecord{textRecordBase{recordBase{"OneText", OneText},false}}
+	records[OneTextWithEndElement] = &oneTextRecord{textRecordBase{recordBase{"OneTextWithEndElement", OneTextWithEndElement},true}}
+	records[FalseText] = &falseTextRecord{textRecordBase{recordBase{"FalseText", FalseText},false}}
+	records[FalseTextWithEndElement] = &falseTextRecord{textRecordBase{recordBase{"FalseTextWithEndElement", FalseTextWithEndElement},true}}
+	records[TrueText] = &trueTextRecord{textRecordBase{recordBase{"TrueText", TrueText},false}}
+	records[TrueTextWithEndElement] = &trueTextRecord{textRecordBase{recordBase{"TrueTextWithEndElement", TrueTextWithEndElement},true}}
+	records[Int8Text] = &int8TextRecord{textRecordBase{recordBase{"Int8Text", Int8Text},false}}
+	records[Int8TextWithEndElement] = &int8TextRecord{textRecordBase{recordBase{"Int8TextWithEndElement", Int8TextWithEndElement},true}}
+	records[Int16Text] = &int16TextRecord{textRecordBase{recordBase{"Int16Text", Int16Text},false}}
+	records[Int16TextWithEndElement] = &int16TextRecord{textRecordBase{recordBase{"Int16TextWithEndElement", Int16TextWithEndElement},true}}
+	records[Int32Text] = &int32TextRecord{textRecordBase{recordBase{"Int32Text", Int32Text},false}}
+	records[Int32TextWithEndElement] = &int32TextRecord{textRecordBase{recordBase{"Int32TextWithEndElement", Int32TextWithEndElement},true}}
+	records[Int64Text] = &int64TextRecord{textRecordBase{recordBase{"Int64Text", Int64Text},false}}
+	records[Int64TextWithEndElement] = &int64TextRecord{textRecordBase{recordBase{"Int64TextWithEndElement", Int64TextWithEndElement},true}}
+	records[FloatText] = &floatTextRecord{textRecordBase{recordBase{"FloatText", FloatText},false}}
+	records[FloatTextWithEndElement] = &floatTextRecord{textRecordBase{recordBase{"FloatTextWithEndElement", FloatTextWithEndElement},true}}
+	records[DoubleText] = &doubleTextRecord{textRecordBase{recordBase{"DoubleText", DoubleText},false}}
+	records[DoubleTextWithEndElement] = &doubleTextRecord{textRecordBase{recordBase{"DoubleTextWithEndElement", DoubleTextWithEndElement},true}}
+	records[DecimalText] = &decimalTextRecord{textRecordBase{recordBase{"DecimalText", DecimalText},false}}
+	records[DecimalTextWithEndElement] = &decimalTextRecord{textRecordBase{recordBase{"DecimalTextWithEndElement", DecimalTextWithEndElement},true}}
+	records[DateTimeText] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeText", DateTimeText},false}}
+	records[DateTimeTextWithEndElement] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeTextWithEndElement", DateTimeTextWithEndElement},true}}
+	records[Chars8Text] = &chars8TextRecord{textRecordBase{recordBase{"Chars8Text", Chars8Text},false}}
+	records[Chars8TextWithEndElement] = &chars8TextRecord{textRecordBase{recordBase{"Chars8TextWithEndElement", Chars8TextWithEndElement},true}}
+	records[Chars16Text] = &chars16TextRecord{textRecordBase{recordBase{"Chars16Text", Chars16Text},false}}
+	records[Chars16TextWithEndElement] = &chars16TextRecord{textRecordBase{recordBase{"Chars16TextWithEndElement", Chars16TextWithEndElement},true}}
+	records[Chars32Text] = &chars32TextRecord{textRecordBase{recordBase{"Chars32Text", Chars32Text},false}}
+	records[Chars32TextWithEndElement] = &chars32TextRecord{textRecordBase{recordBase{"Chars32TextWithEndElement", Chars32TextWithEndElement},true}}
+	records[Bytes8Text] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8Text", Bytes8Text},false}}
+	records[Bytes8TextWithEndElement] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8TextWithEndElement", Bytes8TextWithEndElement},true}}
+	records[Bytes16Text] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16Text", Bytes16Text},false}}
+	records[Bytes16TextWithEndElement] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16TextWithEndElement", Bytes16TextWithEndElement},true}}
+	records[Bytes32Text] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32Text", Bytes32Text},false}}
+	records[Bytes32TextWithEndElement] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32TextWithEndElement", Bytes32TextWithEndElement},true}}
+	records[StartListText] = &startListTextRecord{textRecordBase{recordBase{"StartListText", StartListText},false}}
+	records[StartListTextWithEndElement] = &startListTextRecord{textRecordBase{recordBase{"StartListTextWithEndElement", StartListTextWithEndElement},true}}
+	records[EndListText] = &endListTextRecord{textRecordBase{recordBase{"EndListText", EndListText},false}}
+	records[EndListTextWithEndElement] = &endListTextRecord{textRecordBase{recordBase{"EndListTextWithEndElement", EndListTextWithEndElement},true}}
+	records[EmptyText] = &emptyTextRecord{textRecordBase{recordBase{"EmptyText", EmptyText},false}}
+	records[EmptyTextWithEndElement] = &emptyTextRecord{textRecordBase{recordBase{"EmptyTextWithEndElement", EmptyTextWithEndElement},true}}
+	records[DictionaryText] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryText", DictionaryText},false}}
+	records[DictionaryTextWithEndElement] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryTextWithEndElement", DictionaryTextWithEndElement},true}}
+	records[UniqueIdText] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdText", UniqueIdText},false}}
+	records[UniqueIdTextWithEndElement] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdTextWithEndElement", UniqueIdTextWithEndElement},true}}
+	records[TimeSpanText] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanText", TimeSpanText},false}}
+	records[TimeSpanTextWithEndElement] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanTextWithEndElement", TimeSpanTextWithEndElement},true}}
+	records[UuidText] = &uuidTextRecord{textRecordBase{recordBase{"UuidText", UuidText},false}}
+	records[UuidTextWithEndElement] = &uuidTextRecord{textRecordBase{recordBase{"UuidTextWithEndElement", UuidTextWithEndElement},true}}
+	records[UInt64Text] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64Text", UInt64Text},false}}
+	records[UInt64TextWithEndElement] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64TextWithEndElement", UInt64TextWithEndElement},true}}
+	records[BoolText] = &boolTextRecord{textRecordBase{recordBase{"BoolText", BoolText},false}}
+	records[BoolTextWithEndElement] = &boolTextRecord{textRecordBase{recordBase{"BoolTextWithEndElement", BoolTextWithEndElement},true}}
+	records[UnicodeChars8Text] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8Text", UnicodeChars8Text},false}}
+	records[UnicodeChars8TextWithEndElement] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8TextWithEndElement", UnicodeChars8TextWithEndElement},true}}
+	records[UnicodeChars16Text] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16Text", UnicodeChars16Text},false}}
+	records[UnicodeChars16TextWithEndElement] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16TextWithEndElement", UnicodeChars16TextWithEndElement},true}}
+	records[UnicodeChars32Text] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32Text", UnicodeChars32Text},false}}
+	records[UnicodeChars32TextWithEndElement] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32TextWithEndElement", UnicodeChars32TextWithEndElement},true}}
+	records[QNameDictionaryText] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryText", QNameDictionaryText},false}}
+	records[QNameDictionaryTextWithEndElement] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryTextWithEndElement", QNameDictionaryTextWithEndElement},true}}
 
 	addAzRecords()
-}
-
-func addTextRecord(recordId byte, textName string, textReader func(*decoder) (string, error), textWriter func(*encoder,string) error) {
-	records[recordId] = &textRecordBase{recordBase{name: textName, id: recordId}, false, textReader, textWriter}
-	records[recordId+1] = &textRecordBase{recordBase{name: textName + "WithEndElement", id: recordId + 1}, true, textReader, textWriter}
 }
 
 func addAzRecords() {
@@ -543,7 +553,7 @@ func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml
 		return err
 	}
 	textEncoder := textRecord.(textRecordEncoder)
-	return textEncoder.encodeText(e, attr.Value)
+	return textEncoder.encodeText(e, textEncoder, attr.Value)
 }
 
 //(0x26-0x3F)
@@ -760,7 +770,7 @@ func (r *commentRecord) getName() string {
 	return "commentRecord (0x02)"
 }
 
-func (r *commentRecord) decodeText(d *decoder) (string, error) {
+func (r *commentRecord) decodeText(d *decoder, trd textRecordDecoder) (string, error) {
 	text, err := readString(d.bin)
 	if err != nil {
 		return "", err
@@ -819,7 +829,7 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 			d.elementStack.Push(startElement)
 		}
 		//fmt.Println("DecodeText", r.decoder.elementStack.top.value)
-		_, err = valDecoder.decodeText(d)
+		_, err = valDecoder.decodeText(d, valDecoder)
 		//fmt.Println("DecodeText2", r.decoder.elementStack.top.value)
 		if err != nil {
 			return nil, err

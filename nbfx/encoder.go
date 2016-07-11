@@ -72,7 +72,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
 			textWriter := record.(textRecordEncoder)
-			err = textWriter.encodeCharData(e, token.(xml.CharData))
+			err = textWriter.encodeText(e, textWriter, string(token.(xml.CharData)))
 		} else if record.isEndElement() {
 			elementWriter := record.(elementRecordEncoder)
 			err = elementWriter.encodeElement(e, xml.StartElement{})

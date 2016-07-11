@@ -137,7 +137,7 @@ const (
 	ZeroText byte = 0x80
 	ZeroTextWithEndElement byte = 0x81
 	OneText byte = 0x82
-	OneTextWithEndElement byte = 0x84
+	OneTextWithEndElement byte = 0x83
 	FalseText byte = 0x84
 	FalseTextWithEndElement byte = 0x85
 	TrueText byte = 0x86
@@ -147,7 +147,7 @@ const (
 	Int16Text byte = 0x8A
 	Int16TextWithEndElement byte = 0x8B
 	Int32Text byte = 0x8C
-	Int32TextWithEndElement byte = 0x8E
+	Int32TextWithEndElement byte = 0x8D
 	Int64Text byte = 0x8E
 	Int64TextWithEndElement byte = 0x8F
 	FloatText byte = 0x90

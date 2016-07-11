@@ -49,11 +49,13 @@ func (d *decoder) Decode(bin []byte) (string, error) {
 	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
 		if rec.isStartElement() || rec.isEndElement() {
+			//fmt.Println("Decoding", rec)
 			elementReader := rec.(elementRecordDecoder)
 			rec, err = elementReader.decodeElement(d)
 		} else if rec.isText() {
+			//fmt.Println("Decoding", rec)
 			textReader := rec.(textRecordDecoder)
-			_, err = textReader.decodeText(d)
+			_, err = textReader.decodeText(d, textReader)
 			rec = nil
 		} else {
 			err = errors.New(fmt.Sprint("NotSupported: Decode record", rec))
