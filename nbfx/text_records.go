@@ -200,6 +200,11 @@ func (r *dictionaryTextRecord) readText(d *decoder) (string, error) {
 	return readDictionaryString(d)
 }
 
+func (r *dictionaryTextRecord) writeText(e *encoder, text string) error {
+	_, err := writeDictionaryString(e, text)
+	return err
+}
+
 type uniqueIdTextRecord struct {
 	textRecordBase
 }

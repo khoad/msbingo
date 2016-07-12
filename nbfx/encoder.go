@@ -39,6 +39,7 @@ func (e *encoder) popToken() (xml.Token, error) {
 	var token xml.Token
 	var err error
 	if e.tokenBuffer.Len() > 0 {
+		fmt.Println("popToken")
 		token = e.tokenBuffer.Dequeue().(xml.Token)
 		//fmt.Println("Popped", token)
 		return token, err
@@ -52,6 +53,7 @@ func (e *encoder) popToken() (xml.Token, error) {
 }
 
 func (e *encoder) pushToken(token xml.Token) {
+	fmt.Println("pushToken", token)
 	e.tokenBuffer.Enqueue(token)
 }
 
