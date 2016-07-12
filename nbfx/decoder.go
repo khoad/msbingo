@@ -1,6 +1,7 @@
 package nbfx
 
 import (
+	"regexp"
 	"bytes"
 	"encoding/xml"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	//"time"
 	//"github.com/nu7hatch/gouuid"
+	"github.com/satori/go.uuid"
 )
 
 type decoder struct {
@@ -413,8 +415,71 @@ func readUniqueIdText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: UniqueIdText")
 }
 
+const urnPrefix string = "urn:uuid:"
+func isUniqueId(text string) bool {
+
+	if !strings.HasPrefix(text, urnPrefix) {
+		return false
+	}
+	uuidString := text[len(urnPrefix):]
+	return isUuid(uuidString)
+}
+
+func flipBytes(bin []byte) []byte {
+	for i, j := 0, len(bin) - 1; i < j; i, j = i+1, j-1 {
+		bin[i], bin[j] = bin[j], bin[i]
+	}
+
+	return bin
+}
+
+func flipUuidBytesToLittleEndian(bin []byte) ([]byte, error) {
+	part1 := flipBytes(bin[0:4])
+	part2 := flipBytes(bin[4:6])
+	part3 := flipBytes(bin[6:8])
+	part4 := bin[8:]
+
+	//concatenate parts 1-4
+	return append(part1, append(part2, append(part3, part4...)...)...), nil
+}
+
+func writeUniqueIdText(e *encoder, text string) error {
+	id, err := uuid.FromString(text)
+	bin := id.Bytes()
+	bin, err = flipUuidBytesToLittleEndian(bin)
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(bin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func readUuidText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: UuidText")
+}
+
+func isUuid(text string) bool {
+	if len(text) != 36 {
+		return false
+	}
+	match, err := regexp.MatchString("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", text)
+	if err != nil {
+		return false
+	}
+	return match
+}
+
+func writeUuidText(e *encoder, text string) error {
+	id, err := uuid.FromString(text)
+	bin := id.Bytes()
+	_, err = e.bin.Write(bin)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func readTimeSpanText(d *decoder) (string, error) {

@@ -213,6 +213,10 @@ func (r *uniqueIdTextRecord) readText(d *decoder) (string, error) {
 	return readUniqueIdText(d)
 }
 
+func (r *uniqueIdTextRecord) writeText(e *encoder, text string) error {
+	return writeUniqueIdText(e, text)
+}
+
 type timeSpanTextRecord struct {
 	textRecordBase
 }

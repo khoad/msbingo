@@ -473,6 +473,15 @@ func (r *shortXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error
 	return xml.Attr{Name: xml.Name{Local: name}, Value: val}, nil
 }
 
+func (r *shortXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Value)
+	return err
+}
+
 //(0x09)
 type xmlnsAttributeRecord struct {
 	attributeRecordBase
@@ -493,6 +502,19 @@ func (r *xmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
 		return xml.Attr{}, err
 	}
 	return xml.Attr{Name: xml.Name{Local: prefix + ":" + name}, Value: val}, nil
+}
+
+func (r *xmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Value)
+	return err
 }
 
 //(0x0A)
@@ -597,7 +619,7 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 }
 
 func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	//fmt.Println("--->", element, e.bin)
+	//fmt.Println("--->", element, e.bin, e.dict[element.Name.Local])
 	e.bin.Write([]byte{r.id})
 	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
 	err = r.encodeAttributes(e, element.Attr)
@@ -707,7 +729,10 @@ func (r *shortElementRecord) encodeElement(e *encoder, element xml.StartElement)
 		return err
 	}
 	_, err = writeString(e, element.Name.Local)
-	return err
+	if err != nil {
+		return err
+	}
+	return r.encodeAttributes(e, element.Attr)
 }
 
 // 0x5E-0x77

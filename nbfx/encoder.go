@@ -138,6 +138,10 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		id = FalseText
 	} else if text == "true" {
 		id = TrueText
+	} else if isUuid(text) {
+		id = UuidText
+	} else if isUniqueId(text) {
+		id = UniqueIdText
 	} else {
 		if _, ok := e.dict[text]; ok {
 			id = DictionaryText
