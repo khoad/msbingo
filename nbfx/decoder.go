@@ -382,7 +382,9 @@ func readListText(d *decoder) (string, error) {
 }
 
 func readDecimalText(d *decoder) (string, error) {
-	return "", errors.New("NotImplemented: DecimalText")
+	d.bin.Read(make([]byte,16))
+	return "[DECIMAL]", nil
+	//return "", errors.New("NotImplemented: DecimalText")
 }
 
 func readDateTimeText(d *decoder) (string, error) {
@@ -401,18 +403,11 @@ func readDateTimeText(d *decoder) (string, error) {
 }
 
 func readUniqueIdText(d *decoder) (string, error) {
-	//var err error
-	//buf, err := readBytes(reader, 16)
-	//if err != nil {
-	//	return "", err
-	//}
-	//val, err := uuid.Parse(buf.Bytes())
-	//if err != nil {
-	//	return "", err
-	//}
-	//val.setVariant(uuid.ReservedRFC4122)
-	//return fmt.Sprintf("%s", val.String()), nil
-	return "", errors.New("NotImplemented: UniqueIdText")
+	result, err := readUuidText(d)
+	if err != nil {
+		return "", err
+	}
+	return "urn:uuid:" + result, nil
 }
 
 const urnPrefix string = "urn:uuid:"
@@ -433,7 +428,7 @@ func flipBytes(bin []byte) []byte {
 	return bin
 }
 
-func flipUuidBytesToLittleEndian(bin []byte) ([]byte, error) {
+func flipUuidByteOrder(bin []byte) ([]byte, error) {
 	part1 := flipBytes(bin[0:4])
 	part2 := flipBytes(bin[4:6])
 	part3 := flipBytes(bin[6:8])
@@ -446,7 +441,7 @@ func flipUuidBytesToLittleEndian(bin []byte) ([]byte, error) {
 func writeUniqueIdText(e *encoder, text string) error {
 	id, err := uuid.FromString(text)
 	bin := id.Bytes()
-	bin, err = flipUuidBytesToLittleEndian(bin)
+	bin, err = flipUuidByteOrder(bin)
 	if err != nil {
 		return err
 	}
@@ -458,7 +453,24 @@ func writeUniqueIdText(e *encoder, text string) error {
 }
 
 func readUuidText(d *decoder) (string, error) {
-	return "", errors.New("NotImplemented: UuidText")
+	bytes := make([]byte, 16)
+
+	_, err := d.bin.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	bytes, err = flipUuidByteOrder(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	val, err := uuid.FromBytes(bytes)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s", val.String()), nil
 }
 
 func isUuid(text string) bool {

@@ -39,7 +39,6 @@ func (e *encoder) popToken() (xml.Token, error) {
 	var token xml.Token
 	var err error
 	if e.tokenBuffer.Len() > 0 {
-		fmt.Println("popToken")
 		token = e.tokenBuffer.Dequeue().(xml.Token)
 		//fmt.Println("Popped", token)
 		return token, err
@@ -53,7 +52,6 @@ func (e *encoder) popToken() (xml.Token, error) {
 }
 
 func (e *encoder) pushToken(token xml.Token) {
-	fmt.Println("pushToken", token)
 	e.tokenBuffer.Enqueue(token)
 }
 
@@ -67,9 +65,7 @@ func (e *encoder) Encode(xmlString string) ([]byte, error) {
 		if err != nil {
 			return e.bin.Bytes(), err
 		}
-		//fmt.Println("Encode record", record.getName())
 		if record.isStartElement() {
-			//fmt.Println("Encode element", token)
 			elementWriter := record.(elementRecordEncoder)
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
