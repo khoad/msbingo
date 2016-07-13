@@ -407,7 +407,7 @@ func readUniqueIdText(d *decoder) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return "urn:uuid:" + result, nil
+	return urnPrefix + result, nil
 }
 
 const urnPrefix string = "urn:uuid:"
@@ -470,7 +470,7 @@ func readUuidText(d *decoder) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s", val.String()), nil
+	return val.String(), nil
 }
 
 func isUuid(text string) bool {
