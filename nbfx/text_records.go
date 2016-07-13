@@ -233,6 +233,10 @@ func (r *uuidTextRecord) readText(d *decoder) (string, error) {
 	return readUuidText(d)
 }
 
+func (r *uuidTextRecord) writeText(e *encoder, text string) error {
+	return writeUuidText(e, text)
+}
+
 type uInt64TextRecord struct {
 	textRecordBase
 }

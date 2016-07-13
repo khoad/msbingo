@@ -484,16 +484,6 @@ func isUuid(text string) bool {
 	return match
 }
 
-func writeUuidText(e *encoder, text string) error {
-	id, err := uuid.FromString(text)
-	bin := id.Bytes()
-	_, err = e.bin.Write(bin)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func readTimeSpanText(d *decoder) (string, error) {
 	return "", errors.New("NotImplemented: TimeSpanText")
 }

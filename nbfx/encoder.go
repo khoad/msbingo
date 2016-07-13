@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/satori/go.uuid"
 )
 
 type encoder struct {
@@ -289,4 +290,18 @@ func writeChars32Text(e *encoder, text string) error {
 	writeMultiByteInt31(e, uint32(len(bytes)))
 	_, err := e.bin.Write(bytes)
 	return err
+}
+
+func writeUuidText(e *encoder, text string) error {
+	id, err := uuid.FromString(text)
+	bin := id.Bytes()
+	bin, err = flipUuidByteOrder(bin)
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(bin)
+	if err != nil {
+		return err
+	}
+	return nil
 }
