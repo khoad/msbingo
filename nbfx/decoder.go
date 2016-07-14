@@ -399,6 +399,8 @@ func readDateTimeText(d *decoder) (string, error) {
 	//timeUint := uint64(timeBin)
 	//time := time.Time(timeUint)
 	//time.
+
+	// https://play.golang.org/p/Hy9NNuD7u5
 	d.bin.Read(make([]byte, 8))
 	return "[DATETIME]", nil
 	//return "", errors.New("NotImplemented: DateTimeText")
