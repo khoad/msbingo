@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/satori/go.uuid"
+	"io"
 )
 
 type encoder struct {
@@ -56,7 +57,7 @@ func (e *encoder) pushToken(token xml.Token) {
 	e.tokenBuffer.Enqueue(token)
 }
 
-func (e *encoder) Encode(reader *bytes.Reader) ([]byte, error) {
+func (e *encoder) Encode(reader io.Reader) ([]byte, error) {
 	e.bin = &bytes.Buffer{}
 	e.xml = xml.NewDecoder(reader)
 	token, err := e.popToken()

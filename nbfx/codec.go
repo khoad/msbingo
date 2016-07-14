@@ -1,15 +1,15 @@
 package nbfx
 
 import (
-	"bytes"
+	"io"
 )
 
 type Encoder interface {
-	Encode(*bytes.Reader) ([]byte, error)
+	Encode(io.Reader) ([]byte, error)
 }
 
 type Decoder interface {
-	Decode(*bytes.Reader) (string, error)
+	Decode(io.Reader) (string, error)
 }
 
 // for MultiByteInt31

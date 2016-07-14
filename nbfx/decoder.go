@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"regexp"
 	"strings"
@@ -44,8 +45,16 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 	return decoder
 }
 
-func (d *decoder) Decode(reader *bytes.Reader) (string, error) {
-	d.bin = reader
+func (d *decoder) Decode(reader io.Reader) (string, error) {
+	//covert io.Reader to *byte.Reader
+	//TODO - do this more efficiently!
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	byteReader := bytes.NewReader(b)
+
+	d.bin = byteReader
 	xmlBuf := &bytes.Buffer{}
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
