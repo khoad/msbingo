@@ -42,15 +42,15 @@ type textRecordEncoder interface {
 }
 
 type recordBase struct {
-	name       string
-	id       byte
+	name string
+	id   byte
 }
 
-func (r *recordBase) isStartElement() bool   { return false }
-func (r *recordBase) isEndElement() bool { return false }
-func (r *recordBase) isAttribute() bool { return false }
-func (r *recordBase) isText() bool { return false }
-func (r *recordBase) getName() string { return r.name }
+func (r *recordBase) isStartElement() bool { return false }
+func (r *recordBase) isEndElement() bool   { return false }
+func (r *recordBase) isAttribute() bool    { return false }
+func (r *recordBase) isText() bool         { return false }
+func (r *recordBase) getName() string      { return r.name }
 
 type elementRecordBase struct {
 	recordBase
@@ -126,7 +126,7 @@ func (r *elementRecordBase) encodeElement(e *encoder, element xml.StartElement) 
 	return errors.New(fmt.Sprint("NotImplemented: encodeElement on", r))
 }
 
-type attributeRecordBase struct{
+type attributeRecordBase struct {
 	recordBase
 }
 
@@ -206,93 +206,93 @@ var records = map[byte]record{}
 
 func initRecords() {
 	// Miscellaneous Records
-	records[EndElement] = &endElementRecord{elementRecordBase{recordBase{"EndElement",EndElement}}}
-	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment",Comment},false}}
-	records[Array] = &arrayRecord{elementRecordBase{recordBase{"Array",Array}}}
+	records[EndElement] = &endElementRecord{elementRecordBase{recordBase{"EndElement", EndElement}}}
+	records[Comment] = &commentRecord{textRecordBase{recordBase{"Comment", Comment}, false}}
+	records[Array] = &arrayRecord{elementRecordBase{recordBase{"Array", Array}}}
 
 	// Attribute Records
-	records[ShortAttribute] = &shortAttributeRecord{attributeRecordBase{recordBase{"ShortAttribute",ShortAttribute}}}
-	records[Attribute] = &attributeRecord{attributeRecordBase{recordBase{"Attribute",Attribute}}}
-	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryAttribute",ShortDictionaryAttribute}}}
-	records[DictionaryAttribute] = &dictionaryAttributeRecord{attributeRecordBase{recordBase{"DictionaryAttribute",DictionaryAttribute}}}
-	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortXmlnsAttribute",ShortXmlnsAttribute}}}
-	records[XmlnsAttribute] = &xmlnsAttributeRecord{attributeRecordBase{recordBase{"XmlnsAttribute",XmlnsAttribute}}}
-	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryXmlnsAttribute",ShortDictionaryXmlnsAttribute}}}
-	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"DictionaryXmlnsAttribute",DictionaryXmlnsAttribute}}}
+	records[ShortAttribute] = &shortAttributeRecord{attributeRecordBase{recordBase{"ShortAttribute", ShortAttribute}}}
+	records[Attribute] = &attributeRecord{attributeRecordBase{recordBase{"Attribute", Attribute}}}
+	records[ShortDictionaryAttribute] = &shortDictionaryAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryAttribute", ShortDictionaryAttribute}}}
+	records[DictionaryAttribute] = &dictionaryAttributeRecord{attributeRecordBase{recordBase{"DictionaryAttribute", DictionaryAttribute}}}
+	records[ShortXmlnsAttribute] = &shortXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortXmlnsAttribute", ShortXmlnsAttribute}}}
+	records[XmlnsAttribute] = &xmlnsAttributeRecord{attributeRecordBase{recordBase{"XmlnsAttribute", XmlnsAttribute}}}
+	records[ShortDictionaryXmlnsAttribute] = &shortDictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"ShortDictionaryXmlnsAttribute", ShortDictionaryXmlnsAttribute}}}
+	records[DictionaryXmlnsAttribute] = &dictionaryXmlnsAttributeRecord{attributeRecordBase{recordBase{"DictionaryXmlnsAttribute", DictionaryXmlnsAttribute}}}
 	// PrefixDictionaryAttributeAZRecord ADDED IN addAzRecords()
 	// PrefixAttributeAZRecord ADDED IN addAzRecords()
 
 	// Element Records
-	records[ShortElement] = &shortElementRecord{elementRecordBase{recordBase{"ShortElement",ShortElement}}}
-	records[Element] = &elementRecord{elementRecordBase{recordBase{"Element",Element}}}
-	records[ShortDictionaryElement] = &shortDictionaryElementRecord{elementRecordBase{recordBase{"ShortDictionaryElement",ShortDictionaryElement}}}
-	records[DictionaryElement] = &dictionaryElementRecord{elementRecordBase{recordBase{"DictionaryElement",DictionaryElement}}}
+	records[ShortElement] = &shortElementRecord{elementRecordBase{recordBase{"ShortElement", ShortElement}}}
+	records[Element] = &elementRecord{elementRecordBase{recordBase{"Element", Element}}}
+	records[ShortDictionaryElement] = &shortDictionaryElementRecord{elementRecordBase{recordBase{"ShortDictionaryElement", ShortDictionaryElement}}}
+	records[DictionaryElement] = &dictionaryElementRecord{elementRecordBase{recordBase{"DictionaryElement", DictionaryElement}}}
 	// PrefixDictionaryElementAZRecord ADDED IN addAzRecords()
 	// PrefixElementAZRecord ADDED IN addAzRecords()
 
 	// Text Records
-	records[ZeroText] = &zeroTextRecord{textRecordBase{recordBase{"ZeroText", ZeroText},false}}
-	records[ZeroTextWithEndElement] = &zeroTextRecord{textRecordBase{recordBase{"ZeroTextWithEndElement", ZeroTextWithEndElement},true}}
-	records[OneText] = &oneTextRecord{textRecordBase{recordBase{"OneText", OneText},false}}
-	records[OneTextWithEndElement] = &oneTextRecord{textRecordBase{recordBase{"OneTextWithEndElement", OneTextWithEndElement},true}}
-	records[FalseText] = &falseTextRecord{textRecordBase{recordBase{"FalseText", FalseText},false}}
-	records[FalseTextWithEndElement] = &falseTextRecord{textRecordBase{recordBase{"FalseTextWithEndElement", FalseTextWithEndElement},true}}
-	records[TrueText] = &trueTextRecord{textRecordBase{recordBase{"TrueText", TrueText},false}}
-	records[TrueTextWithEndElement] = &trueTextRecord{textRecordBase{recordBase{"TrueTextWithEndElement", TrueTextWithEndElement},true}}
-	records[Int8Text] = &int8TextRecord{textRecordBase{recordBase{"Int8Text", Int8Text},false}}
-	records[Int8TextWithEndElement] = &int8TextRecord{textRecordBase{recordBase{"Int8TextWithEndElement", Int8TextWithEndElement},true}}
-	records[Int16Text] = &int16TextRecord{textRecordBase{recordBase{"Int16Text", Int16Text},false}}
-	records[Int16TextWithEndElement] = &int16TextRecord{textRecordBase{recordBase{"Int16TextWithEndElement", Int16TextWithEndElement},true}}
-	records[Int32Text] = &int32TextRecord{textRecordBase{recordBase{"Int32Text", Int32Text},false}}
-	records[Int32TextWithEndElement] = &int32TextRecord{textRecordBase{recordBase{"Int32TextWithEndElement", Int32TextWithEndElement},true}}
-	records[Int64Text] = &int64TextRecord{textRecordBase{recordBase{"Int64Text", Int64Text},false}}
-	records[Int64TextWithEndElement] = &int64TextRecord{textRecordBase{recordBase{"Int64TextWithEndElement", Int64TextWithEndElement},true}}
-	records[FloatText] = &floatTextRecord{textRecordBase{recordBase{"FloatText", FloatText},false}}
-	records[FloatTextWithEndElement] = &floatTextRecord{textRecordBase{recordBase{"FloatTextWithEndElement", FloatTextWithEndElement},true}}
-	records[DoubleText] = &doubleTextRecord{textRecordBase{recordBase{"DoubleText", DoubleText},false}}
-	records[DoubleTextWithEndElement] = &doubleTextRecord{textRecordBase{recordBase{"DoubleTextWithEndElement", DoubleTextWithEndElement},true}}
-	records[DecimalText] = &decimalTextRecord{textRecordBase{recordBase{"DecimalText", DecimalText},false}}
-	records[DecimalTextWithEndElement] = &decimalTextRecord{textRecordBase{recordBase{"DecimalTextWithEndElement", DecimalTextWithEndElement},true}}
-	records[DateTimeText] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeText", DateTimeText},false}}
-	records[DateTimeTextWithEndElement] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeTextWithEndElement", DateTimeTextWithEndElement},true}}
-	records[Chars8Text] = &chars8TextRecord{textRecordBase{recordBase{"Chars8Text", Chars8Text},false}}
-	records[Chars8TextWithEndElement] = &chars8TextRecord{textRecordBase{recordBase{"Chars8TextWithEndElement", Chars8TextWithEndElement},true}}
-	records[Chars16Text] = &chars16TextRecord{textRecordBase{recordBase{"Chars16Text", Chars16Text},false}}
-	records[Chars16TextWithEndElement] = &chars16TextRecord{textRecordBase{recordBase{"Chars16TextWithEndElement", Chars16TextWithEndElement},true}}
-	records[Chars32Text] = &chars32TextRecord{textRecordBase{recordBase{"Chars32Text", Chars32Text},false}}
-	records[Chars32TextWithEndElement] = &chars32TextRecord{textRecordBase{recordBase{"Chars32TextWithEndElement", Chars32TextWithEndElement},true}}
-	records[Bytes8Text] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8Text", Bytes8Text},false}}
-	records[Bytes8TextWithEndElement] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8TextWithEndElement", Bytes8TextWithEndElement},true}}
-	records[Bytes16Text] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16Text", Bytes16Text},false}}
-	records[Bytes16TextWithEndElement] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16TextWithEndElement", Bytes16TextWithEndElement},true}}
-	records[Bytes32Text] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32Text", Bytes32Text},false}}
-	records[Bytes32TextWithEndElement] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32TextWithEndElement", Bytes32TextWithEndElement},true}}
-	records[StartListText] = &startListTextRecord{textRecordBase{recordBase{"StartListText", StartListText},false}}
-	records[StartListTextWithEndElement] = &startListTextRecord{textRecordBase{recordBase{"StartListTextWithEndElement", StartListTextWithEndElement},true}}
-	records[EndListText] = &endListTextRecord{textRecordBase{recordBase{"EndListText", EndListText},false}}
-	records[EndListTextWithEndElement] = &endListTextRecord{textRecordBase{recordBase{"EndListTextWithEndElement", EndListTextWithEndElement},true}}
-	records[EmptyText] = &emptyTextRecord{textRecordBase{recordBase{"EmptyText", EmptyText},false}}
-	records[EmptyTextWithEndElement] = &emptyTextRecord{textRecordBase{recordBase{"EmptyTextWithEndElement", EmptyTextWithEndElement},true}}
-	records[DictionaryText] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryText", DictionaryText},false}}
-	records[DictionaryTextWithEndElement] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryTextWithEndElement", DictionaryTextWithEndElement},true}}
-	records[UniqueIdText] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdText", UniqueIdText},false}}
-	records[UniqueIdTextWithEndElement] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdTextWithEndElement", UniqueIdTextWithEndElement},true}}
-	records[TimeSpanText] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanText", TimeSpanText},false}}
-	records[TimeSpanTextWithEndElement] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanTextWithEndElement", TimeSpanTextWithEndElement},true}}
-	records[UuidText] = &uuidTextRecord{textRecordBase{recordBase{"UuidText", UuidText},false}}
-	records[UuidTextWithEndElement] = &uuidTextRecord{textRecordBase{recordBase{"UuidTextWithEndElement", UuidTextWithEndElement},true}}
-	records[UInt64Text] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64Text", UInt64Text},false}}
-	records[UInt64TextWithEndElement] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64TextWithEndElement", UInt64TextWithEndElement},true}}
-	records[BoolText] = &boolTextRecord{textRecordBase{recordBase{"BoolText", BoolText},false}}
-	records[BoolTextWithEndElement] = &boolTextRecord{textRecordBase{recordBase{"BoolTextWithEndElement", BoolTextWithEndElement},true}}
-	records[UnicodeChars8Text] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8Text", UnicodeChars8Text},false}}
-	records[UnicodeChars8TextWithEndElement] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8TextWithEndElement", UnicodeChars8TextWithEndElement},true}}
-	records[UnicodeChars16Text] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16Text", UnicodeChars16Text},false}}
-	records[UnicodeChars16TextWithEndElement] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16TextWithEndElement", UnicodeChars16TextWithEndElement},true}}
-	records[UnicodeChars32Text] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32Text", UnicodeChars32Text},false}}
-	records[UnicodeChars32TextWithEndElement] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32TextWithEndElement", UnicodeChars32TextWithEndElement},true}}
-	records[QNameDictionaryText] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryText", QNameDictionaryText},false}}
-	records[QNameDictionaryTextWithEndElement] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryTextWithEndElement", QNameDictionaryTextWithEndElement},true}}
+	records[ZeroText] = &zeroTextRecord{textRecordBase{recordBase{"ZeroText", ZeroText}, false}}
+	records[ZeroTextWithEndElement] = &zeroTextRecord{textRecordBase{recordBase{"ZeroTextWithEndElement", ZeroTextWithEndElement}, true}}
+	records[OneText] = &oneTextRecord{textRecordBase{recordBase{"OneText", OneText}, false}}
+	records[OneTextWithEndElement] = &oneTextRecord{textRecordBase{recordBase{"OneTextWithEndElement", OneTextWithEndElement}, true}}
+	records[FalseText] = &falseTextRecord{textRecordBase{recordBase{"FalseText", FalseText}, false}}
+	records[FalseTextWithEndElement] = &falseTextRecord{textRecordBase{recordBase{"FalseTextWithEndElement", FalseTextWithEndElement}, true}}
+	records[TrueText] = &trueTextRecord{textRecordBase{recordBase{"TrueText", TrueText}, false}}
+	records[TrueTextWithEndElement] = &trueTextRecord{textRecordBase{recordBase{"TrueTextWithEndElement", TrueTextWithEndElement}, true}}
+	records[Int8Text] = &int8TextRecord{textRecordBase{recordBase{"Int8Text", Int8Text}, false}}
+	records[Int8TextWithEndElement] = &int8TextRecord{textRecordBase{recordBase{"Int8TextWithEndElement", Int8TextWithEndElement}, true}}
+	records[Int16Text] = &int16TextRecord{textRecordBase{recordBase{"Int16Text", Int16Text}, false}}
+	records[Int16TextWithEndElement] = &int16TextRecord{textRecordBase{recordBase{"Int16TextWithEndElement", Int16TextWithEndElement}, true}}
+	records[Int32Text] = &int32TextRecord{textRecordBase{recordBase{"Int32Text", Int32Text}, false}}
+	records[Int32TextWithEndElement] = &int32TextRecord{textRecordBase{recordBase{"Int32TextWithEndElement", Int32TextWithEndElement}, true}}
+	records[Int64Text] = &int64TextRecord{textRecordBase{recordBase{"Int64Text", Int64Text}, false}}
+	records[Int64TextWithEndElement] = &int64TextRecord{textRecordBase{recordBase{"Int64TextWithEndElement", Int64TextWithEndElement}, true}}
+	records[FloatText] = &floatTextRecord{textRecordBase{recordBase{"FloatText", FloatText}, false}}
+	records[FloatTextWithEndElement] = &floatTextRecord{textRecordBase{recordBase{"FloatTextWithEndElement", FloatTextWithEndElement}, true}}
+	records[DoubleText] = &doubleTextRecord{textRecordBase{recordBase{"DoubleText", DoubleText}, false}}
+	records[DoubleTextWithEndElement] = &doubleTextRecord{textRecordBase{recordBase{"DoubleTextWithEndElement", DoubleTextWithEndElement}, true}}
+	records[DecimalText] = &decimalTextRecord{textRecordBase{recordBase{"DecimalText", DecimalText}, false}}
+	records[DecimalTextWithEndElement] = &decimalTextRecord{textRecordBase{recordBase{"DecimalTextWithEndElement", DecimalTextWithEndElement}, true}}
+	records[DateTimeText] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeText", DateTimeText}, false}}
+	records[DateTimeTextWithEndElement] = &dateTimeTextRecord{textRecordBase{recordBase{"DateTimeTextWithEndElement", DateTimeTextWithEndElement}, true}}
+	records[Chars8Text] = &chars8TextRecord{textRecordBase{recordBase{"Chars8Text", Chars8Text}, false}}
+	records[Chars8TextWithEndElement] = &chars8TextRecord{textRecordBase{recordBase{"Chars8TextWithEndElement", Chars8TextWithEndElement}, true}}
+	records[Chars16Text] = &chars16TextRecord{textRecordBase{recordBase{"Chars16Text", Chars16Text}, false}}
+	records[Chars16TextWithEndElement] = &chars16TextRecord{textRecordBase{recordBase{"Chars16TextWithEndElement", Chars16TextWithEndElement}, true}}
+	records[Chars32Text] = &chars32TextRecord{textRecordBase{recordBase{"Chars32Text", Chars32Text}, false}}
+	records[Chars32TextWithEndElement] = &chars32TextRecord{textRecordBase{recordBase{"Chars32TextWithEndElement", Chars32TextWithEndElement}, true}}
+	records[Bytes8Text] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8Text", Bytes8Text}, false}}
+	records[Bytes8TextWithEndElement] = &bytes8TextRecord{textRecordBase{recordBase{"Bytes8TextWithEndElement", Bytes8TextWithEndElement}, true}}
+	records[Bytes16Text] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16Text", Bytes16Text}, false}}
+	records[Bytes16TextWithEndElement] = &bytes16TextRecord{textRecordBase{recordBase{"Bytes16TextWithEndElement", Bytes16TextWithEndElement}, true}}
+	records[Bytes32Text] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32Text", Bytes32Text}, false}}
+	records[Bytes32TextWithEndElement] = &bytes32TextRecord{textRecordBase{recordBase{"Bytes32TextWithEndElement", Bytes32TextWithEndElement}, true}}
+	records[StartListText] = &startListTextRecord{textRecordBase{recordBase{"StartListText", StartListText}, false}}
+	records[StartListTextWithEndElement] = &startListTextRecord{textRecordBase{recordBase{"StartListTextWithEndElement", StartListTextWithEndElement}, true}}
+	records[EndListText] = &endListTextRecord{textRecordBase{recordBase{"EndListText", EndListText}, false}}
+	records[EndListTextWithEndElement] = &endListTextRecord{textRecordBase{recordBase{"EndListTextWithEndElement", EndListTextWithEndElement}, true}}
+	records[EmptyText] = &emptyTextRecord{textRecordBase{recordBase{"EmptyText", EmptyText}, false}}
+	records[EmptyTextWithEndElement] = &emptyTextRecord{textRecordBase{recordBase{"EmptyTextWithEndElement", EmptyTextWithEndElement}, true}}
+	records[DictionaryText] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryText", DictionaryText}, false}}
+	records[DictionaryTextWithEndElement] = &dictionaryTextRecord{textRecordBase{recordBase{"DictionaryTextWithEndElement", DictionaryTextWithEndElement}, true}}
+	records[UniqueIdText] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdText", UniqueIdText}, false}}
+	records[UniqueIdTextWithEndElement] = &uniqueIdTextRecord{textRecordBase{recordBase{"UniqueIdTextWithEndElement", UniqueIdTextWithEndElement}, true}}
+	records[TimeSpanText] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanText", TimeSpanText}, false}}
+	records[TimeSpanTextWithEndElement] = &timeSpanTextRecord{textRecordBase{recordBase{"TimeSpanTextWithEndElement", TimeSpanTextWithEndElement}, true}}
+	records[UuidText] = &uuidTextRecord{textRecordBase{recordBase{"UuidText", UuidText}, false}}
+	records[UuidTextWithEndElement] = &uuidTextRecord{textRecordBase{recordBase{"UuidTextWithEndElement", UuidTextWithEndElement}, true}}
+	records[UInt64Text] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64Text", UInt64Text}, false}}
+	records[UInt64TextWithEndElement] = &uInt64TextRecord{textRecordBase{recordBase{"UInt64TextWithEndElement", UInt64TextWithEndElement}, true}}
+	records[BoolText] = &boolTextRecord{textRecordBase{recordBase{"BoolText", BoolText}, false}}
+	records[BoolTextWithEndElement] = &boolTextRecord{textRecordBase{recordBase{"BoolTextWithEndElement", BoolTextWithEndElement}, true}}
+	records[UnicodeChars8Text] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8Text", UnicodeChars8Text}, false}}
+	records[UnicodeChars8TextWithEndElement] = &unicodeChars8TextRecord{textRecordBase{recordBase{"UnicodeChars8TextWithEndElement", UnicodeChars8TextWithEndElement}, true}}
+	records[UnicodeChars16Text] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16Text", UnicodeChars16Text}, false}}
+	records[UnicodeChars16TextWithEndElement] = &unicodeChars16TextRecord{textRecordBase{recordBase{"UnicodeChars16TextWithEndElement", UnicodeChars16TextWithEndElement}, true}}
+	records[UnicodeChars32Text] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32Text", UnicodeChars32Text}, false}}
+	records[UnicodeChars32TextWithEndElement] = &unicodeChars32TextRecord{textRecordBase{recordBase{"UnicodeChars32TextWithEndElement", UnicodeChars32TextWithEndElement}, true}}
+	records[QNameDictionaryText] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryText", QNameDictionaryText}, false}}
+	records[QNameDictionaryTextWithEndElement] = &qNameDictionaryTextRecord{textRecordBase{recordBase{"QNameDictionaryTextWithEndElement", QNameDictionaryTextWithEndElement}, true}}
 
 	addAzRecords()
 }
@@ -301,11 +301,11 @@ func addAzRecords() {
 	var b byte
 	for b = 0; b < 26; b++ {
 		byt := byte(b)
-		prefix := strings.ToUpper(string('a'+b))
-		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{attributeRecordBase{recordBase{"PrefixDictionaryAttribute"+prefix,byte(PrefixDictionaryAttributeA+b)}}}
-		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{attributeRecordBase{recordBase{"PrefixAttribute"+prefix,byte(PrefixAttributeA+b)}}}
-		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{elementRecordBase{recordBase{"PrefixDictionaryElement"+prefix,byte(PrefixDictionaryElementA+b)}}}
-		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{elementRecordBase{recordBase{"PrefixElement"+prefix, byte(PrefixElementA+byt)}}}
+		prefix := strings.ToUpper(string('a' + b))
+		records[byte(PrefixDictionaryAttributeA+byt)] = &prefixDictionaryAttributeAZRecord{attributeRecordBase{recordBase{"PrefixDictionaryAttribute" + prefix, byte(PrefixDictionaryAttributeA + b)}}}
+		records[byte(PrefixAttributeA+byt)] = &prefixAttributeAZRecord{attributeRecordBase{recordBase{"PrefixAttribute" + prefix, byte(PrefixAttributeA + b)}}}
+		records[byte(PrefixDictionaryElementA+byt)] = &prefixDictionaryElementAZRecord{elementRecordBase{recordBase{"PrefixDictionaryElement" + prefix, byte(PrefixDictionaryElementA + b)}}}
+		records[byte(PrefixElementA+byt)] = &prefixElementAZRecord{elementRecordBase{recordBase{"PrefixElement" + prefix, byte(PrefixElementA + byt)}}}
 	}
 }
 
@@ -333,7 +333,7 @@ func (r *endElementRecord) isEndElement() bool {
 func (r *endElementRecord) decodeElement(d *decoder) (record, error) {
 	item := d.elementStack.Pop()
 	element := item.(xml.StartElement)
-	endElementToken := xml.EndElement{Name:xml.Name{Local:element.Name.Local,Space:element.Name.Space}}
+	endElementToken := xml.EndElement{Name: xml.Name{Local: element.Name.Local, Space: element.Name.Space}}
 	err := d.xml.EncodeToken(endElementToken)
 	return nil, err
 }
@@ -749,7 +749,7 @@ func (r *prefixElementAZRecord) decodeElement(d *decoder) (record, error) {
 	if err != nil {
 		return nil, err
 	}
-	element := xml.StartElement{Name: xml.Name{Local: string('a'+(r.id - PrefixElementA)) + ":" + name}}
+	element := xml.StartElement{Name: xml.Name{Local: string('a'+(r.id-PrefixElementA)) + ":" + name}}
 
 	return r.readElementAttributes(element, d)
 }

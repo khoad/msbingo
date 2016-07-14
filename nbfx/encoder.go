@@ -10,8 +10,8 @@ import (
 
 type encoder struct {
 	dict        map[string]uint32
-	xml *xml.Decoder
-	bin *bytes.Buffer
+	xml         *xml.Decoder
+	bin         *bytes.Buffer
 	tokenBuffer *Queue
 }
 
@@ -56,9 +56,8 @@ func (e *encoder) pushToken(token xml.Token) {
 	e.tokenBuffer.Enqueue(token)
 }
 
-func (e *encoder) Encode(xmlString string) ([]byte, error) {
+func (e *encoder) Encode(reader *bytes.Reader) ([]byte, error) {
 	e.bin = &bytes.Buffer{}
-	reader := bytes.NewReader([]byte(xmlString))
 	e.xml = xml.NewDecoder(reader)
 	token, err := e.popToken()
 	for err == nil && token != nil {
@@ -176,9 +175,9 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return records[PrefixElementA + byte(prefixIndex)], nil
+			return records[PrefixElementA+byte(prefixIndex)], nil
 		} else {
-			return records[PrefixDictionaryElementA+ byte(prefixIndex)], nil
+			return records[PrefixDictionaryElementA+byte(prefixIndex)], nil
 		}
 	} else {
 		if !isNameIndexAssigned {
@@ -209,9 +208,9 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 	if prefix == "" {
 		if isXmlns {
 			if _, ok := e.dict[attr.Value]; ok {
-				return records [ShortDictionaryXmlnsAttribute], nil
+				return records[ShortDictionaryXmlnsAttribute], nil
 			} else {
-				return records [ShortXmlnsAttribute], nil
+				return records[ShortXmlnsAttribute], nil
 			}
 		} else if isNameIndexAssigned {
 			return records[ShortDictionaryAttribute], nil
@@ -220,9 +219,9 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return records[PrefixAttributeA + byte(prefixIndex)], nil
+			return records[PrefixAttributeA+byte(prefixIndex)], nil
 		} else {
-			return records[PrefixDictionaryAttributeA+ byte(prefixIndex)], nil
+			return records[PrefixDictionaryAttributeA+byte(prefixIndex)], nil
 		}
 	} else {
 		if isXmlns {

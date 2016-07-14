@@ -510,7 +510,7 @@ func TestEncodePrefixDictionaryElementB(t *testing.T) {
 	xml := "<b:Foo>"
 
 	encoder := NewEncoderWithStrings(map[uint32]string{0x02: "Foo"})
-	actual, err := encoder.Encode(xml)
+	actual, err := encoder.Encode(bytes.NewReader([]byte(xml)))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + fmt.Sprintf("%x", actual))
 		return
@@ -522,7 +522,7 @@ func TestEncodePrefixDictionaryElementS(t *testing.T) {
 	xml := "<s:Foo>"
 
 	encoder := NewEncoderWithStrings(map[uint32]string{0x02: "Foo"})
-	actual, err := encoder.Encode(xml)
+	actual, err := encoder.Encode(bytes.NewReader([]byte(xml)))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + fmt.Sprintf("%x", actual))
 		return
@@ -559,7 +559,7 @@ func TestWriteString_abc(t *testing.T) {
 	str := "abc"
 	expected := []byte{0x03, 0x61, 0x62, 0x63}
 	expectedLen := len(expected)
-	e := &encoder{bin:&buffer}
+	e := &encoder{bin: &buffer}
 	i, err := writeString(e, str)
 	if err != nil {
 		t.Error("Error: " + err.Error())
@@ -573,7 +573,7 @@ func TestWriteString_abc(t *testing.T) {
 
 func testWriteMultiByteInt31(t *testing.T, num uint32, expected []byte) {
 	buffer := bytes.Buffer{}
-	e := &encoder{bin:&buffer}
+	e := &encoder{bin: &buffer}
 	i, err := writeMultiByteInt31(e, num)
 	if err != nil {
 		t.Error("Error: " + err.Error())
@@ -588,7 +588,7 @@ func testWriteMultiByteInt31(t *testing.T, num uint32, expected []byte) {
 
 func testEncode(t *testing.T, expected []byte, xmlString string) {
 	encoder := NewEncoder()
-	actual, err := encoder.Encode(xmlString)
+	actual, err := encoder.Encode(bytes.NewReader([]byte(xmlString)))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + string(actual))
 	}
@@ -610,4 +610,3 @@ func assertBinEqual(t *testing.T, actual, expected []byte) {
 		}
 	}
 }
-

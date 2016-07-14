@@ -3,8 +3,8 @@ package nbfx
 import (
 	"bytes"
 	"encoding/binary"
-	"testing"
 	"math"
+	"testing"
 )
 
 //https://golang.org/pkg/testing/
@@ -555,7 +555,7 @@ func testReadFloatTextSpecialValue(t *testing.T, num float32, expected string) {
 	buf := &bytes.Buffer{}
 	binary.Write(buf, binary.LittleEndian, &num)
 	r := bytes.NewReader(buf.Bytes())
-	d := &decoder{ bin: r}
+	d := &decoder{bin: r}
 	actual, err := readFloatText(d)
 	if err != nil {
 		t.Error(err.Error())
@@ -567,7 +567,7 @@ func testReadDoubleTextSpecialValue(t *testing.T, num float64, expected string) 
 	buf := &bytes.Buffer{}
 	binary.Write(buf, binary.LittleEndian, &num)
 	r := bytes.NewReader(buf.Bytes())
-	d := &decoder{bin:r}
+	d := &decoder{bin: r}
 	actual, err := readDoubleText(d)
 	if err != nil {
 		t.Error(err.Error())
@@ -577,7 +577,7 @@ func testReadDoubleTextSpecialValue(t *testing.T, num float64, expected string) 
 
 func testDecode(t *testing.T, bin []byte, expected string) {
 	decoder := NewDecoder()
-	actual, err := decoder.Decode(bin)
+	actual, err := decoder.Decode(bytes.NewReader(bin))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
 	}

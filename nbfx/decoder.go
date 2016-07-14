@@ -1,15 +1,15 @@
 package nbfx
 
 import (
-	"regexp"
 	"bytes"
-	"encoding/xml"
-	"io"
-	"fmt"
-	"encoding/binary"
-	"math"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/xml"
 	"errors"
+	"fmt"
+	"io"
+	"math"
+	"regexp"
 	"strings"
 	//"time"
 	//"github.com/nu7hatch/gouuid"
@@ -17,10 +17,10 @@ import (
 )
 
 type decoder struct {
-	dict        map[uint32]string
+	dict         map[uint32]string
 	elementStack Stack
-	bin *bytes.Reader
-	xml *xml.Encoder
+	bin          *bytes.Reader
+	xml          *xml.Encoder
 }
 
 func (d *decoder) addDictionaryString(index uint32, value string) {
@@ -44,8 +44,8 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 	return decoder
 }
 
-func (d *decoder) Decode(bin []byte) (string, error) {
-	d.bin = bytes.NewReader(bin)
+func (d *decoder) Decode(reader *bytes.Reader) (string, error) {
+	d.bin = reader
 	xmlBuf := &bytes.Buffer{}
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
@@ -382,7 +382,7 @@ func readListText(d *decoder) (string, error) {
 }
 
 func readDecimalText(d *decoder) (string, error) {
-	d.bin.Read(make([]byte,16))
+	d.bin.Read(make([]byte, 16))
 	return "[DECIMAL]", nil
 	//return "", errors.New("NotImplemented: DecimalText")
 }
@@ -413,6 +413,7 @@ func readUniqueIdText(d *decoder) (string, error) {
 }
 
 const urnPrefix string = "urn:uuid:"
+
 func isUniqueId(text string) bool {
 
 	if !strings.HasPrefix(text, urnPrefix) {
@@ -423,7 +424,7 @@ func isUniqueId(text string) bool {
 }
 
 func flipBytes(bin []byte) []byte {
-	for i, j := 0, len(bin) - 1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, len(bin)-1; i < j; i, j = i+1, j-1 {
 		bin[i], bin[j] = bin[j], bin[i]
 	}
 

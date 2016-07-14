@@ -2,13 +2,13 @@ package nbfx
 
 //https://gist.github.com/bemasher/1777766
 type Stack struct {
-	top *StackElement
+	top  *StackElement
 	size int
 }
 
 type StackElement struct {
 	value interface{} // All types satisfy the empty interface, so we can store anything here.
-	next *StackElement
+	next  *StackElement
 }
 
 // Return the stack's length

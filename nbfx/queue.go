@@ -2,14 +2,14 @@ package nbfx
 
 //https://gist.github.com/bemasher/1777766
 type Queue struct {
-	first *QueueElement
-	last *QueueElement
+	first  *QueueElement
+	last   *QueueElement
 	length int
 }
 
 type QueueElement struct {
 	value interface{} // All types satisfy the empty interface, so we can store anything here.
-	next *QueueElement
+	next  *QueueElement
 }
 
 // Return the queue's length

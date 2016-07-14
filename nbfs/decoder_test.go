@@ -1,6 +1,7 @@
 package nbfs
 
 import (
+	"bytes"
 	"io/ioutil"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestDecodeExample1(t *testing.T) {
 		return
 	}
 	expected := string(xmlBytes)
-	actual, err := decoder.Decode(bin)
+	actual, err := decoder.Decode(bytes.NewReader(bin))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
 		return
@@ -32,7 +33,7 @@ func TestDecodePrefixDictionaryElementS(t *testing.T) {
 	bin := []byte{0x56, 0x02}
 
 	decoder := NewDecoder()
-	actual, err := decoder.Decode(bin)
+	actual, err := decoder.Decode(bytes.NewReader(bin))
 	if err != nil {
 		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
 		return

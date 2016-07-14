@@ -1,6 +1,7 @@
 package nbfs
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -17,9 +18,9 @@ func TestEncodeExample1(t *testing.T) {
 	if failOn(err, "unable to open "+path+".bin", t) {
 		return
 	}
-	actual, err := encoder.Encode(string(xmlBin))
+	actual, err := encoder.Encode(bytes.NewReader(xmlBin))
 	if err != nil {
-		t.Error(fmt.Sprint(err.Error() + " : Got ", actual))
+		t.Error(fmt.Sprint(err.Error()+" : Got ", actual))
 		return
 	}
 	assertBinEqual(t, actual, expected)
