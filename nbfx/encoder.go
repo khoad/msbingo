@@ -42,13 +42,9 @@ func (e *encoder) popToken() (xml.Token, error) {
 	var err error
 	if e.tokenBuffer.Len() > 0 {
 		token = e.tokenBuffer.Dequeue().(xml.Token)
-		//fmt.Println("Popped", token)
 		return token, err
 	}
 	token, err = e.xml.RawToken()
-	if err == nil {
-		//fmt.Println("Popped", token)
-	}
 	token = xml.CopyToken(token) // make the token immutable (see doc for xml.Decoder.Token())
 	return token, err
 }
@@ -87,14 +83,13 @@ func (e *encoder) Encode(reader io.Reader) ([]byte, error) {
 }
 
 func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
-	//fmt.Println("getRecordFromToken", token)
 	switch token.(type) {
 	case xml.StartElement:
 		return e.getStartElementRecordFromToken(token.(xml.StartElement))
 	case xml.CharData:
 		return e.getTextRecordFromToken(token.(xml.CharData))
 	case xml.EndElement:
-		return records[EndElement], nil
+		return records[endElement], nil
 	}
 
 	tokenXmlBytes, err := xml.Marshal(token)
@@ -114,7 +109,6 @@ func (e *encoder) getTextRecordFromToken(cd xml.CharData) (record, error) {
 	case xml.EndElement:
 		withEndElement = true
 	}
-	//fmt.Println("getTextRecordFromToken", string(cd), next, withEndElement)
 	text := string(cd)
 	if !withEndElement {
 		e.pushToken(next)
@@ -126,24 +120,24 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 	var id byte
 	id = 0x00
 	if text == "" {
-		id = EmptyText
+		id = emptyText
 	} else if text == "0" {
-		id = ZeroText
+		id = zeroText
 	} else if text == "1" {
-		id = OneText
+		id = oneText
 	} else if text == "false" {
-		id = FalseText
+		id = falseText
 	} else if text == "true" {
-		id = TrueText
+		id = trueText
 	} else if isUuid(text) {
-		id = UuidText
+		id = uuidText
 	} else if isUniqueId(text) {
-		id = UniqueIdText
+		id = uniqueIdText
 	} else {
 		if _, ok := e.dict[text]; ok {
-			id = DictionaryText
+			id = dictionaryText
 		} else {
-			id = Chars8Text
+			id = chars8Text
 		}
 	}
 	if id != 0 && withEndElement {
@@ -156,7 +150,6 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 }
 
 func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) (record, error) {
-	//fmt.Printf("Getting start element for %s", startElement.Name.Local)
 	prefix := startElement.Name.Space
 	name := startElement.Name.Local
 	prefixIndex := -1
@@ -170,28 +163,27 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 
 	if prefix == "" {
 		if !isNameIndexAssigned {
-			return records[ShortElement], nil
+			return records[shortElement], nil
 		} else {
-			return records[ShortDictionaryElement], nil
+			return records[shortDictionaryElement], nil
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return records[PrefixElementA+byte(prefixIndex)], nil
+			return records[prefixElementA+byte(prefixIndex)], nil
 		} else {
-			return records[PrefixDictionaryElementA+byte(prefixIndex)], nil
+			return records[prefixDictionaryElementA+byte(prefixIndex)], nil
 		}
 	} else {
 		if !isNameIndexAssigned {
-			return records[Element], nil
+			return records[element], nil
 		} else {
-			return records[DictionaryElement], nil
+			return records[dictionaryElement], nil
 		}
 	}
 	return nil, errors.New(fmt.Sprint("getStartElementRecordFromToken unable to resolve", startElement))
 }
 
 func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
-	//fmt.Printf("Getting attr element for %s", attr.Name.Local)
 	prefix := attr.Name.Space
 	name := attr.Name.Local
 	isXmlns := prefix == "xmlns" || prefix == "" && name == "xmlns"
@@ -204,38 +196,36 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 		isNameIndexAssigned = true
 	}
 
-	//fmt.Println("getAttributeRecordFromToken", prefix, name, isXmlns, prefixIndex, isNameIndexAssigned)
-
 	if prefix == "" {
 		if isXmlns {
 			if _, ok := e.dict[attr.Value]; ok {
-				return records[ShortDictionaryXmlnsAttribute], nil
+				return records[shortDictionaryXmlnsAttribute], nil
 			} else {
-				return records[ShortXmlnsAttribute], nil
+				return records[shortXmlnsAttribute], nil
 			}
 		} else if isNameIndexAssigned {
-			return records[ShortDictionaryAttribute], nil
+			return records[shortDictionaryAttribute], nil
 		} else {
-			return records[ShortAttribute], nil
+			return records[shortAttribute], nil
 		}
 	} else if prefixIndex != -1 {
 		if !isNameIndexAssigned {
-			return records[PrefixAttributeA+byte(prefixIndex)], nil
+			return records[prefixAttributeA+byte(prefixIndex)], nil
 		} else {
-			return records[PrefixDictionaryAttributeA+byte(prefixIndex)], nil
+			return records[prefixDictionaryAttributeA+byte(prefixIndex)], nil
 		}
 	} else {
 		if isXmlns {
 			if !isNameIndexAssigned {
-				return records[XmlnsAttribute], nil
+				return records[xmlnsAttribute], nil
 			} else {
-				return records[DictionaryXmlnsAttribute], nil
+				return records[dictionaryXmlnsAttribute], nil
 			}
 		} else {
 			if !isNameIndexAssigned {
-				return records[Attribute], nil
+				return records[attribute], nil
 			} else {
-				return records[DictionaryAttribute], nil
+				return records[dictionaryAttribute], nil
 			}
 		}
 	}
@@ -265,12 +255,12 @@ func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	if num > max {
 		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
-	if num < MASK_MBI31 {
+	if num < mask_mbi31 {
 		return e.bin.Write([]byte{byte(num)})
 	}
-	q := num / MASK_MBI31
-	rem := num % MASK_MBI31
-	n1, err := e.bin.Write([]byte{byte(MASK_MBI31 + rem)})
+	q := num / mask_mbi31
+	rem := num % mask_mbi31
+	n1, err := e.bin.Write([]byte{byte(mask_mbi31 + rem)})
 	if err != nil {
 		return n1, err
 	}

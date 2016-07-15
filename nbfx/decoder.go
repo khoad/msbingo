@@ -73,11 +73,11 @@ func (d *decoder) Decode(reader io.Reader) (string, error) {
 
 func readMultiByteInt31(reader io.Reader) (uint32, error) {
 	b, err := readByte(reader)
-	if uint32(b) < MASK_MBI31 {
+	if uint32(b) < mask_mbi31 {
 		return uint32(b), err
 	}
 	nextB, err := readMultiByteInt31(reader)
-	return MASK_MBI31*(nextB-1) + uint32(b), err
+	return mask_mbi31*(nextB-1) + uint32(b), err
 }
 
 func readByte(reader io.Reader) (byte, error) {
@@ -363,7 +363,7 @@ func readListText(d *decoder) (string, error) {
 		if !rec.isText() {
 			return "", errors.New("Records within list must be TextRecord types, but found " + rec.getName())
 		}
-		if rec.getName() == records[EndListText].getName() {
+		if rec.getName() == records[endListText].getName() {
 			break
 		}
 		textDecoder := rec.(textRecordDecoder)
