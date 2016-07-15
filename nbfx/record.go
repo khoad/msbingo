@@ -63,10 +63,8 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *d
 	var attributeToken xml.Attr
 
 	// get next record
-	//fmt.Println("getting next record")
 	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
-		//fmt.Println("Processing record", rec.getName())
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +184,7 @@ func (r *textRecordBase) encodeText(e *encoder, tre textRecordEncoder, text stri
 }
 
 func getNextRecord(d *decoder) (record, error) {
-	b, err := d.bin.ReadByte()
+	b, err := readByte(d.bin)
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +568,6 @@ func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml
 		return err
 	}
 	textRecord, err := e.getTextRecordFromText(attr.Value, false)
-	//fmt.Println("prefixDictionaryAttributeAZRecord gotTextRecord", textRecord)
 	if err != nil {
 		return err
 	}
@@ -619,7 +616,6 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 }
 
 func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	//fmt.Println("--->", element, e.bin, e.dict[element.Name.Local])
 	e.bin.Write([]byte{r.id})
 	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
 	err = r.encodeAttributes(e, element.Attr)
@@ -843,7 +839,6 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 	var i uint32
 	var startElement xml.StartElement
 	for i = 0; i < len; i++ {
-		//fmt.Println("LOOP", r.decoder.elementStack.top.value)
 		if i == 0 {
 			startElement = d.elementStack.top.value.(xml.StartElement)
 		} else {
@@ -853,9 +848,7 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 			}
 			d.elementStack.Push(startElement)
 		}
-		//fmt.Println("DecodeText", r.decoder.elementStack.top.value)
 		_, err = valDecoder.decodeText(d, valDecoder)
-		//fmt.Println("DecodeText2", r.decoder.elementStack.top.value)
 		if err != nil {
 			return nil, err
 		}
