@@ -417,10 +417,15 @@ func readDateTimeText(d *decoder) (string, error) {
 
 	// cNanos for cent-nanos (NBFX spec states the number is the 100 nanoseconds that have elapsed since 1.1.0001)
 	var cNanos uint64 = maskedUIntDate
-	var sec int64 = int64(cNanos / uint64(time.Second) * 100)
-	var nsec int32 = int32(cNanos % uint64(time.Second*100))
+	var sec int64 = int64(cNanos / 1e7)
+	var nsec int64 = int64(cNanos % 1e7)
 
-	t := time.Unix(sec-62135596698, int64(nsec-690588672))
+	const (
+		secondsPerDay        = 24 * 60 * 60
+		unixToInternal int64 = (1969*365 + 1969/4 - 1969/100 + 1969/400) * secondsPerDay
+		internalToUnix int64 = -unixToInternal
+	)
+	t := time.Unix(sec+internalToUnix, nsec)
 
 	switch tz {
 	case 0: // not specified, nothing is added
