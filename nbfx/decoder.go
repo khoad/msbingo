@@ -7,13 +7,12 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"io"
 	"math"
 	"regexp"
 	"strings"
-	//"time"
-	//"github.com/nu7hatch/gouuid"
-	"github.com/satori/go.uuid"
+	"time"
 )
 
 type decoder struct {
@@ -396,9 +395,45 @@ func readDateTimeText(d *decoder) (string, error) {
 	//time.
 
 	// https://play.golang.org/p/Hy9NNuD7u5
-	d.bin.Read(make([]byte, 8))
-	return "[DATETIME]", nil
+	//d.bin.Read(make([]byte, 8))
+	//return "[DATETIME]", nil
 	//return "", errors.New("NotImplemented: DateTimeText")
+
+	buf, err := readBytes(d.bin, 8)
+	if err != nil {
+		return "", err
+	}
+
+	bin := buf.Bytes()
+	tz := (bin[7] & 0xC0) >> 6
+
+	// Masking
+	bin[7] &= 0x3F
+	// Create a new buffer on the new masked bin
+	buf = bytes.NewBuffer(bin)
+
+	var maskedUIntDate uint64
+	binary.Read(buf, binary.LittleEndian, &maskedUIntDate)
+
+	// cNanos for cent-nanos (NBFX spec states the number is the 100 nanoseconds that have elapsed since 1.1.0001)
+	var cNanos uint64 = maskedUIntDate
+	var sec int64 = int64(cNanos / uint64(time.Second) * 100)
+	var nsec int32 = int32(cNanos % uint64(time.Second*100))
+
+	t := time.Unix(sec-62135596698, int64(nsec-690588672))
+
+	switch tz {
+	case 0: // not specified, nothing is added
+		return fmt.Sprint(t.UTC().Format("2006-01-02T15:04:05.9999999")), nil
+	case 1: // UTC, add "Z"
+		// TODO: This won't return what we want
+		return fmt.Sprint(t.UTC()), nil
+	case 2: // Local, add offset
+		// TODO: This won't return what we want
+		return fmt.Sprint(t.Local()), nil
+	}
+
+	return "", fmt.Errorf("Unrecognized TZ %v", tz)
 }
 
 func readUniqueIdText(d *decoder) (string, error) {
