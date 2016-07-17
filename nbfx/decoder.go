@@ -382,23 +382,6 @@ func readDecimalText(d *decoder) (string, error) {
 }
 
 func readDateTimeText(d *decoder) (string, error) {
-	//bin, err := readBytes(reader, 8)
-	//if err != nil {
-	//	return "", err
-	//}
-	//timeBin := bin[:]
-	//tzBin := bin[7]
-	//tzBin[7] = tzBin[7] & 0xFC
-	//tzBin = tzBin & 0x03
-	//timeUint := uint64(timeBin)
-	//time := time.Time(timeUint)
-	//time.
-
-	// https://play.golang.org/p/Hy9NNuD7u5
-	//d.bin.Read(make([]byte, 8))
-	//return "[DATETIME]", nil
-	//return "", errors.New("NotImplemented: DateTimeText")
-
 	buf, err := readBytes(d.bin, 8)
 	if err != nil {
 		return "", err
@@ -418,7 +401,7 @@ func readDateTimeText(d *decoder) (string, error) {
 	// cNanos for cent-nanos (NBFX spec states the number is the 100 nanoseconds that have elapsed since 1.1.0001)
 	var cNanos uint64 = maskedUIntDate
 	var sec int64 = int64(cNanos / 1e7)
-	var nsec int64 = int64(cNanos % 1e7)
+	var nsec int64 = int64(cNanos % 1e9)
 
 	const (
 		secondsPerDay        = 24 * 60 * 60
