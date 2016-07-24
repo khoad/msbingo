@@ -375,10 +375,53 @@ func readListText(d *decoder) (string, error) {
 	return strings.Join(items, " "), nil
 }
 
+// Right now (July 2016) Go does not have a built-in type for decimal. This implementation
+// is limited to float64, which is basically the largest built-in type that can be
+// represented for a .NET 128-bit decimal.
+// See [MS-OAUT] sec 2.2.26 and https://msdn.microsoft.com/en-us/library/364x0z75.aspx
 func readDecimalText(d *decoder) (string, error) {
-	d.bin.Read(make([]byte, 16))
-	return "[DECIMAL]", nil
-	//return "", errors.New("NotImplemented: DecimalText")
+	d.bin.Read(make([]byte, 2)) // wReserved - ignored
+
+	// scale - range 0 to 28
+	buf, err := readBytes(d.bin, 1)
+	if err != nil {
+		return "", err
+	}
+	var scale byte
+	binary.Read(buf, binary.LittleEndian, &scale)
+
+	// sign: 0 = positive, 128 (0x80) = negative
+	buf, err = readBytes(d.bin, 1)
+	if err != nil {
+		return "", err
+	}
+	var sign byte
+	binary.Read(buf, binary.LittleEndian, &sign)
+
+	// Hi32
+	buf, err = readBytes(d.bin, 4)
+	if err != nil {
+		return "", err
+	}
+	var hi32 uint32
+	binary.Read(buf, binary.LittleEndian, &hi32)
+
+	// Lo64
+	buf, err = readBytes(d.bin, 8)
+	if err != nil {
+		return "", err
+	}
+	var lo64 uint64
+	binary.Read(buf, binary.LittleEndian, &lo64)
+
+	//(Hi32 * 2^64 + Lo64) / 10^scale
+	val := (float64(hi32) * (1<<64) + float64(lo64))/math.Pow10(int(scale))
+
+	if sign == 0x80 {
+		val *= -1
+	}
+
+	return fmt.Sprint(val), nil
 }
 
 func readDateTimeText(d *decoder) (string, error) {
