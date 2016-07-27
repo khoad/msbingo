@@ -7,6 +7,8 @@ Currently the decoding side is more (nearly!) complete in terms of implementatio
 
 Encoding is less complete, as it is not necessary to encode exactly as .NET WCF would. It is only necessary to encode properly, such that the target service can decode the original XML message properly.
 
+Feel free to fill out the codec on either the encoding or decoding sides by fixing additional tests or writing more.
+
 # Usage
 
 ``` go
@@ -38,6 +40,11 @@ if err != nil {
 
 // do something with your decoded xml response
 ```
+
+# Background
+Application/soap+msbin1 encoding was a blocking issue for modernizing services from WCF to platform-agnostic technologies such as Go. We needed to be able to make calls to dependency services that spoke msbin1 and were not going to be updated or even reconfigured, but we did not want to introduce unnecessary complexity such as workarounds like .NET-based WCF request translator proxies or deploying Mono with our service instances. Initially we tried the Mono deployment route, which, while it would have worked well enough, significantly complicated our deployment pipeline, thus erasing one of the major advantages of golang.
+
+This project began as an unstructured/personal time project for a few of our team members to help accelarate our golang expertise and to "geek out" a bit on some lower level code than we normally work on. We decided implementing our own codec in pure golang from the MS-published spec was worth the time and we were right. We are open sourcing this in the hope of helping other groups out there in similar circumstances.
 
 # Codec details
 NBFS is a codec developed by Microsoft for use primarily by WCF webservices. It is essentially a binary encoding for Soap XML messages optimized for reducing bytes over the wire.  They have published the specification in multiple parts:
