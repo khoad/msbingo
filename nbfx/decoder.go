@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"io/ioutil"
 )
 
 type decoder struct {
@@ -44,7 +45,12 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 }
 
 func (d *decoder) Decode(reader io.Reader) (string, error) {
-	d.bin = reader
+	// TODO: Do this more efficiently
+	byt, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", errors.New("Reading error " + err.Error())
+	}
+	d.bin = bytes.NewReader(byt)
 	xmlBuf := &bytes.Buffer{}
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
