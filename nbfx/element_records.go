@@ -132,6 +132,14 @@ func (r *shortDictionaryElementRecord) decodeElement(d *decoder) (record, error)
 	return r.readElementAttributes(element, d)
 }
 
+func (r *shortDictionaryElementRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	//TODO: NO ADDITIONAL TESTS pass after inserting this code, but it worked with another project
+	e.bin.Write([]byte{r.id})
+	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
+	err = r.encodeAttributes(e, element.Attr)
+	return err
+}
+
 //(0x43)
 type dictionaryElementRecord struct {
 	elementRecordBase
