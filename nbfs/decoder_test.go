@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"testing"
+	"net/http"
 )
 
 func TestDecodeExample1(t *testing.T) {
@@ -26,6 +27,36 @@ func TestDecodeExample1(t *testing.T) {
 	if expected != actual {
 		t.Error("actual\n" + actual + "\nnot equal to expected\n" + expected)
 	}
+	assertEqual(t, actual, expected)
+}
+
+func TestDecodeExample1ThroughHttpServer(t *testing.T) {
+	path := "../examples/1"
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		bin, err := ioutil.ReadFile(path + ".bin")
+		if failOn(err, "unable to open "+path+".bin", t) {
+			return
+		}
+		w.Write(bin)
+	})
+	go http.ListenAndServe(":12345", nil)
+
+	resp, _ := http.Get("http://localhost:12345")
+	decoder := NewDecoder()
+
+	actual, err := decoder.Decode(resp.Body)
+	defer resp.Body.Close()
+
+	if err != nil {
+		t.Error("Unexpected error: " + err.Error() + " Got: " + actual)
+		return
+	}
+	xmlBytes, err := ioutil.ReadFile(path + ".xml")
+	if failOn(err, "unable to open "+path+".xml", t) {
+		return
+	}
+	expected := string(xmlBytes)
 	assertEqual(t, actual, expected)
 }
 
