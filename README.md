@@ -1,4 +1,6 @@
 # msbingo
+[![Build Status](https://travis-ci.org/khoad/msbingo.svg?branch=master)](https://travis-ci.org/khoad/msbingo)
+
 An implementation of NBFX and NBFS, which is expressed in HTTP terms as `Content-Type: application/soap+msbin1`, written in pure Go to enable interop with a WCF service and Go with no other dependencies (like Mono or Windows).
 
 This implementation follows the Microsoft specification closely in naming, structure and example. Tests for both decoding and encoding have been written for each of the Structure Examples provided, to validate the given bytes encode to the given XML and vice versa.
