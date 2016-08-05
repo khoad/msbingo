@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	//"io/ioutil"
 )
 
 type decoder struct {
