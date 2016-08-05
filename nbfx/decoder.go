@@ -82,7 +82,6 @@ func readMultiByteInt31(reader io.Reader) (uint32, error) {
 func readByte(reader io.Reader) (byte, error) {
 	sb := make([]byte, 1)
 	b, err := reader.Read(sb)
-	//fmt.Println("readByte", b, err, sb)
 	if b > 0 {
 		err = nil
 	}
