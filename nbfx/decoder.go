@@ -257,8 +257,12 @@ func readUnicodeStringBytes(r io.Reader, readLenFunc func(r io.Reader) (uint32, 
 func readBytes(reader io.Reader, numBytes uint32) (*bytes.Buffer, error) {
 	var err error
 	sb := make([]byte, numBytes)
-	_, err = reader.Read(sb)
-	if err != nil && err != io.EOF {
+	var b int
+	b, err = reader.Read(sb)
+	if b > 0 {
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -267,6 +271,18 @@ func readBytes(reader io.Reader, numBytes uint32) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if uint32(b) < numBytes {
+		nextBuf, err := readBytes(reader, numBytes - uint32(b))
+		if err != nil {
+			return &buf, err
+		}
+		_, err = buf.Write(nextBuf.Bytes())
+		if err != nil {
+			return &buf, err
+		}
+	}
+
 	return &buf, nil
 }
 
