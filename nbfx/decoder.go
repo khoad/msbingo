@@ -56,8 +56,10 @@ func (d *decoder) Decode(reader io.Reader) (string, error) {
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
+		println("MAIN LOOP", rec.getName())
 		if rec.isStartElement() || rec.isEndElement() {
 			elementReader := rec.(elementRecordDecoder)
+			println("Rec is start or end", rec.getName())
 			rec, err = elementReader.decodeElement(d)
 		} else if rec.isText() {
 			textReader := rec.(textRecordDecoder)
@@ -70,6 +72,13 @@ func (d *decoder) Decode(reader io.Reader) (string, error) {
 			rec, err = getNextRecord(d)
 		}
 	}
+	// There is nothing left in d.bin. So why did it not get the last (0x01) byte
+	// Did somewhere the read process above stomp on it?
+	// And why does it only happen to *Response.Body, which is an io.ReadCloser?
+	// Does other io.ReadCloser have a similar problem?
+	b := make([]byte, 2)
+	n, err := d.bin.Read(b)
+	println("n, err", n, err.Error())
 	d.xml.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err
