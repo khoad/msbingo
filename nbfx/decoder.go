@@ -45,21 +45,13 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 }
 
 func (d *decoder) Decode(reader io.Reader) (string, error) {
-	// TODO: Do this more efficiently
-	//byt, err := ioutil.ReadAll(reader)
-	//if err != nil {
-	//	return "", errors.New("Reading error " + err.Error())
-	//}
-	//d.bin = bytes.NewReader(byt)
 	d.bin = reader
 	xmlBuf := &bytes.Buffer{}
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
 	for err == nil && rec != nil {
-		println("MAIN LOOP", rec.getName())
 		if rec.isStartElement() || rec.isEndElement() {
 			elementReader := rec.(elementRecordDecoder)
-			println("Rec is start or end", rec.getName())
 			rec, err = elementReader.decodeElement(d)
 		} else if rec.isText() {
 			textReader := rec.(textRecordDecoder)
@@ -72,13 +64,6 @@ func (d *decoder) Decode(reader io.Reader) (string, error) {
 			rec, err = getNextRecord(d)
 		}
 	}
-	// There is nothing left in d.bin. So why did it not get the last (0x01) byte
-	// Did somewhere the read process above stomp on it?
-	// And why does it only happen to *Response.Body, which is an io.ReadCloser?
-	// Does other io.ReadCloser have a similar problem?
-	b := make([]byte, 2)
-	n, err := d.bin.Read(b)
-	println("n, err", n, err.Error())
 	d.xml.Flush()
 	if err != nil && err != io.EOF {
 		return xmlBuf.String(), err
@@ -97,7 +82,11 @@ func readMultiByteInt31(reader io.Reader) (uint32, error) {
 
 func readByte(reader io.Reader) (byte, error) {
 	sb := make([]byte, 1)
-	_, err := reader.Read(sb)
+	b, err := reader.Read(sb)
+	//fmt.Println("readByte", b, err, sb)
+	if b > 0 {
+		err = nil
+	}
 	return sb[0], err
 }
 

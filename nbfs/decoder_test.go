@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func aTestDecodeExample1(t *testing.T) {
+func TestDecodeExample1(t *testing.T) {
 	decoder := NewDecoder()
 	path := "../examples/1"
 	bin, err := ioutil.ReadFile(path + ".bin")
@@ -30,7 +30,7 @@ func aTestDecodeExample1(t *testing.T) {
 	assertEqual(t, actual, expected)
 }
 
-func aTestDecodeExample1ThroughHttpServer(t *testing.T) {
+func TestDecodeExample1ThroughHttpServer(t *testing.T) {
 	path := "../examples/1"
 
 	mux := http.NewServeMux()
@@ -82,7 +82,7 @@ func TestDecodeExampleEndElementThroughHttpServer(t *testing.T) {
 	assertEqual(t, actual, expected)
 }
 
-func aTestDecodePrefixDictionaryElementS(t *testing.T) {
+func TestDecodePrefixDictionaryElementS(t *testing.T) {
 	bin := []byte{0x56, 0x02}
 
 	decoder := NewDecoder()
