@@ -59,6 +59,26 @@ func (r *shortAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error) {
 	return xml.Attr{Name: xml.Name{Local: name}, Value: text}, nil
 }
 
+func (r *shortAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	var err error
+	err = e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+
+	rec, err := e.getTextRecordFromText(attr.Value, false)
+	if err != nil {
+		return err
+	}
+
+	textWriter := rec.(textRecordEncoder)
+	return textWriter.writeText(e, attr.Value)
+}
+
 //(0x05)
 type attributeRecord struct {
 	attributeRecordBase

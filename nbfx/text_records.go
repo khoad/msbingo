@@ -154,6 +154,7 @@ func (r *falseTextRecord) readText(d *decoder) (string, error) {
 
 func (r *falseTextRecord) writeText(e *encoder, text string) error {
 	return nil
+	//return e.bin.WriteByte(falseText)
 }
 
 type trueTextRecord struct {
@@ -166,6 +167,7 @@ func (r *trueTextRecord) readText(d *decoder) (string, error) {
 
 func (r *trueTextRecord) writeText(e *encoder, text string) error {
 	return nil
+	//return e.bin.WriteByte(trueText)
 }
 
 type int8TextRecord struct {
@@ -371,6 +373,16 @@ type boolTextRecord struct {
 
 func (r *boolTextRecord) readText(d *decoder) (string, error) {
 	return readBoolText(d)
+}
+
+func (r *boolTextRecord) writeText(e *encoder, text string) error {
+	//if text == "false" {
+	//	return e.bin.WriteByte(0)
+	//} else if text == "true" {
+	//	return e.bin.WriteByte(1)
+	//}
+	//return errors.New("BoolText record text must be 'true' or 'false'")
+	return errors.New("boolTextRecord.writeText: Not Implemented")
 }
 
 type unicodeChars8TextRecord struct {
