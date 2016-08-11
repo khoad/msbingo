@@ -160,7 +160,7 @@ func (r *shortDictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 		if err != nil {
 			return err
 		}
-		err = e.bin.WriteByte(byte(numInt))
+		_, err = writeMultiByteInt31(e, uint32(numInt))
 		if err != nil {
 			return err
 		}
