@@ -600,8 +600,8 @@ func assertBinEqual(t *testing.T, actual, expected []byte) {
 		t.Error("length of actual " + fmt.Sprint(len(actual)) + " not equal to length of expected " + fmt.Sprint(len(expected)))
 	}
 	for i, b := range actual {
-		if b != expected[i] {
-			pointerLine := "^"
+		if i == len(expected) || b != expected[i] {
+			pointerLine := "^^"
 			for j := 1; j <= i; j++ {
 				pointerLine = "--" + pointerLine
 			}
