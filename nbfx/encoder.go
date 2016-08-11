@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/satori/go.uuid"
 	"io"
+	"strings"
 )
 
 type encoder struct {
@@ -203,7 +204,7 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 			} else {
 				return records[shortXmlnsAttribute], nil
 			}
-		} else if isNameIndexAssigned {
+		} else if isNameIndexAssigned || strings.HasPrefix(attr.Name.Local, "str") {
 			return records[shortDictionaryAttribute], nil
 		} else {
 			return records[shortAttribute], nil
