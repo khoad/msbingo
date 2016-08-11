@@ -78,7 +78,7 @@ func (r *shortAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error 
 	}
 
 	textWriter := rec.(textRecordEncoder)
-	return textWriter.writeText(e, attr.Value)
+	return textWriter.encodeText(e, textWriter, attr.Value)
 }
 
 //(0x05)
