@@ -174,7 +174,7 @@ func (r *shortDictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 	}
 
 	textWriter := rec.(textRecordEncoder)
-	return textWriter.writeText(e, attr.Value)
+	return textWriter.encodeText(e, textWriter, attr.Value)
 }
 
 //(0x07)

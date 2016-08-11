@@ -153,7 +153,7 @@ func (r *falseTextRecord) readText(d *decoder) (string, error) {
 }
 
 func (r *falseTextRecord) writeText(e *encoder, text string) error {
-	return e.bin.WriteByte(falseText)
+	return nil
 }
 
 type trueTextRecord struct {
@@ -165,7 +165,7 @@ func (r *trueTextRecord) readText(d *decoder) (string, error) {
 }
 
 func (r *trueTextRecord) writeText(e *encoder, text string) error {
-	return e.bin.WriteByte(trueText)
+	return nil
 }
 
 type int8TextRecord struct {
