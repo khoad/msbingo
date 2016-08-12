@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 )
 
 func init() {
@@ -170,28 +168,9 @@ func (r *shortDictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 		return err
 	}
 
-	if val, ok := e.dict[attr.Name.Local]; ok {
-		valString := strconv.Itoa(int(val))
-		if err != nil {
-			return err
-		}
-		_, err = writeString(e, valString)
-		if err != nil {
-			return err
-		}
-	} else if strings.HasPrefix(attr.Name.Local, "str") {
-		// capture "8" in "str8" and write "8"
-		numString := attr.Name.Local[3:]
-		numInt, err := strconv.Atoi(numString)
-		if err != nil {
-			return err
-		}
-		_, err = writeMultiByteInt31(e, uint32(numInt))
-		if err != nil {
-			return err
-		}
-	} else {
-		return errors.New("Invalid Operation")
+	err = writeDictionaryBytes(e, attr.Name.Local)
+	if err != nil {
+		return err
 	}
 
 	rec, err := e.getTextRecordFromText(attr.Value, false)
@@ -231,6 +210,32 @@ func (r *dictionaryAttributeRecord) decodeAttribute(d *decoder) (xml.Attr, error
 		return xml.Attr{}, err
 	}
 	return xml.Attr{Name: xml.Name{Local: prefix + ":" + name}, Value: text}, nil
+}
+
+func (r *dictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	var err error
+	err = e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+
+	_, err = writeString(e, attr.Name.Space)
+	if err != nil {
+		return err
+	}
+
+	err = writeDictionaryBytes(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+
+	rec, err := e.getTextRecordFromText(attr.Value, false)
+	if err != nil {
+		return err
+	}
+
+	textWriter := rec.(textRecordEncoder)
+	return textWriter.encodeText(e, textWriter, attr.Value)
 }
 
 //(0x08)

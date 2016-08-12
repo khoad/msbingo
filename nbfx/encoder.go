@@ -8,6 +8,7 @@ import (
 	"github.com/satori/go.uuid"
 	"io"
 	"strings"
+	"strconv"
 )
 
 type encoder struct {
@@ -202,6 +203,7 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
+	hasStrPrefix := strings.HasPrefix(attr.Name.Local, "str")
 
 	if prefix == "" {
 		if isXmlns {
@@ -210,7 +212,7 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 			} else {
 				return records[shortXmlnsAttribute], nil
 			}
-		} else if isNameIndexAssigned || strings.HasPrefix(attr.Name.Local, "str") {
+		} else if isNameIndexAssigned || hasStrPrefix {
 			return records[shortDictionaryAttribute], nil
 		} else {
 			return records[shortAttribute], nil
@@ -229,10 +231,10 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 				return records[dictionaryXmlnsAttribute], nil
 			}
 		} else {
-			if !isNameIndexAssigned {
-				return records[attribute], nil
-			} else {
+			if isNameIndexAssigned || hasStrPrefix {
 				return records[dictionaryAttribute], nil
+			} else {
+				return records[attribute], nil
 			}
 		}
 	}
@@ -299,6 +301,30 @@ func writeUuidText(e *encoder, text string) error {
 	_, err = e.bin.Write(bin)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func writeDictionaryBytes(e *encoder, str string) error {
+	if val, ok := e.dict[str]; ok {
+		valString := strconv.Itoa(int(val))
+		_, err := writeString(e, valString)
+		if err != nil {
+			return err
+		}
+	} else if strings.HasPrefix(str, "str") {
+		// capture "8" in "str8" and write "8"
+		numString := str[3:]
+		numInt, err := strconv.Atoi(numString)
+		if err != nil {
+			return err
+		}
+		_, err = writeMultiByteInt31(e, uint32(numInt))
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New("Invalid Operation")
 	}
 	return nil
 }
