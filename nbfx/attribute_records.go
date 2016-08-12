@@ -318,6 +318,14 @@ func (r *shortDictionaryXmlnsAttributeRecord) decodeAttribute(d *decoder) (xml.A
 	return xml.Attr{Name: xml.Name{Local: name}, Value: val}, nil
 }
 
+func (r *shortDictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	return writeDictionaryBytes(e, attr.Value)
+}
+
 //(0x0B)
 type dictionaryXmlnsAttributeRecord struct {
 	attributeRecordBase

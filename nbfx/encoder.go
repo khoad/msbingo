@@ -5,10 +5,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"io"
-	"strings"
 	"strconv"
+	"strings"
+
+	"github.com/satori/go.uuid"
 )
 
 type encoder struct {
@@ -203,16 +204,17 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
-	hasStrPrefix := strings.HasPrefix(attr.Name.Local, "str")
+	localHasStrPrefix := strings.HasPrefix(attr.Name.Local, "str")
+	valueHasStrPrefix := strings.HasPrefix(attr.Value, "str")
 
 	if prefix == "" {
 		if isXmlns {
-			if _, ok := e.dict[attr.Value]; ok {
+			if _, ok := e.dict[attr.Value]; ok || valueHasStrPrefix {
 				return records[shortDictionaryXmlnsAttribute], nil
 			} else {
 				return records[shortXmlnsAttribute], nil
 			}
-		} else if isNameIndexAssigned || hasStrPrefix {
+		} else if isNameIndexAssigned || localHasStrPrefix {
 			return records[shortDictionaryAttribute], nil
 		} else {
 			return records[shortAttribute], nil
@@ -231,7 +233,7 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 				return records[dictionaryXmlnsAttribute], nil
 			}
 		} else {
-			if isNameIndexAssigned || hasStrPrefix {
+			if isNameIndexAssigned || localHasStrPrefix {
 				return records[dictionaryAttribute], nil
 			} else {
 				return records[attribute], nil
