@@ -107,10 +107,15 @@ func (r *prefixDictionaryElementAZRecord) decodeElement(d *decoder) (record, err
 }
 
 func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	e.bin.Write([]byte{r.id})
-	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
-	err = r.encodeAttributes(e, element.Attr)
-	return err
+	_, err := e.bin.Write([]byte{r.id})
+	if err != nil {
+		return err
+	}
+	_, err = writeMultiByteInt31(e, e.dict[element.Name.Local])
+	if err != nil {
+		return err
+	}
+	return r.encodeAttributes(e, element.Attr)
 }
 
 //(0x42)
@@ -133,11 +138,15 @@ func (r *shortDictionaryElementRecord) decodeElement(d *decoder) (record, error)
 }
 
 func (r *shortDictionaryElementRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	//TODO: NO ADDITIONAL TESTS pass after inserting this code, but it worked with another project
-	e.bin.Write([]byte{r.id})
-	_, err := writeMultiByteInt31(e, e.dict[element.Name.Local])
-	err = r.encodeAttributes(e, element.Attr)
-	return err
+	_, err := e.bin.Write([]byte{r.id})
+	if err != nil {
+		return err
+	}
+	err = writeDictionaryBytes(e, element.Name.Local)
+	if err != nil {
+		return err
+	}
+	return r.encodeAttributes(e, element.Attr)
 }
 
 //(0x43)

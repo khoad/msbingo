@@ -169,24 +169,25 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
+	localHasStrPrefix := strings.HasPrefix(startElement.Name.Local, "str")
 
 	if prefix == "" {
-		if !isNameIndexAssigned {
-			return records[shortElement], nil
-		} else {
+		if isNameIndexAssigned || localHasStrPrefix {
 			return records[shortDictionaryElement], nil
+		} else {
+			return records[shortElement], nil
 		}
 	} else if prefixIndex != -1 {
-		if !isNameIndexAssigned {
-			return records[prefixElementA+byte(prefixIndex)], nil
-		} else {
+		if isNameIndexAssigned {
 			return records[prefixDictionaryElementA+byte(prefixIndex)], nil
+		} else {
+			return records[prefixElementA+byte(prefixIndex)], nil
 		}
 	} else {
-		if !isNameIndexAssigned {
-			return records[element], nil
-		} else {
+		if isNameIndexAssigned {
 			return records[dictionaryElement], nil
+		} else {
+			return records[element], nil
 		}
 	}
 	return nil, errors.New(fmt.Sprint("getStartElementRecordFromToken unable to resolve", startElement))
