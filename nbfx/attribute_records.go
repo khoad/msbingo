@@ -117,6 +117,12 @@ func (r *attributeRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
 	if err != nil {
 		return err
 	}
+
+	_, err = writeString(e, attr.Name.Space)
+	if err != nil {
+		return err
+	}
+
 	_, err = writeString(e, attr.Name.Local)
 	if err != nil {
 		return err
