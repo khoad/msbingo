@@ -253,3 +253,19 @@ func (r *elementRecord) decodeElement(d *decoder) (record, error) {
 
 	return r.readElementAttributes(element, d)
 }
+
+func (r *elementRecord) encodeElement(e *encoder, element xml.StartElement) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, element.Name.Space)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, element.Name.Local)
+	if err != nil {
+		return err
+	}
+	return r.encodeAttributes(e, element.Attr)
+}
