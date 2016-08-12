@@ -192,7 +192,7 @@ func (r *shortElementRecord) decodeElement(d *decoder) (record, error) {
 }
 
 func (r *shortElementRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	_, err := e.bin.Write([]byte{shortElement})
+	err := e.bin.WriteByte(r.id)
 	if err != nil {
 		return err
 	}
