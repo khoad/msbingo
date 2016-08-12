@@ -64,6 +64,15 @@ func (r *commentRecord) decodeText(d *decoder, trd textRecordDecoder) (string, e
 	return text, nil
 }
 
+func (r *commentRecord) encodeText(e *encoder, tre textRecordEncoder, text string) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, text)
+	return err
+}
+
 // 0x03
 type arrayRecord struct {
 	elementRecordBase

@@ -68,7 +68,11 @@ func (e *encoder) Encode(reader io.Reader) ([]byte, error) {
 			err = elementWriter.encodeElement(e, token.(xml.StartElement))
 		} else if record.isText() {
 			textWriter := record.(textRecordEncoder)
-			err = textWriter.encodeText(e, textWriter, string(token.(xml.CharData)))
+			if _, ok := token.(xml.Comment); ok {
+				err = textWriter.encodeText(e, textWriter, string(token.(xml.Comment)))
+			} else {
+				err = textWriter.encodeText(e, textWriter, string(token.(xml.CharData)))
+			}
 		} else if record.isEndElement() {
 			elementWriter := record.(elementRecordEncoder)
 			err = elementWriter.encodeElement(e, xml.StartElement{})
@@ -91,6 +95,8 @@ func (e *encoder) getRecordFromToken(token xml.Token) (record, error) {
 		return e.getTextRecordFromToken(token.(xml.CharData))
 	case xml.EndElement:
 		return records[endElement], nil
+	case xml.Comment:
+		return records[comment], nil
 	}
 
 	tokenXmlBytes, err := xml.Marshal(token)
