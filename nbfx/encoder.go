@@ -184,7 +184,7 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 			return records[prefixElementA+byte(prefixIndex)], nil
 		}
 	} else {
-		if isNameIndexAssigned {
+		if isNameIndexAssigned || localHasStrPrefix {
 			return records[dictionaryElement], nil
 		} else {
 			return records[element], nil
