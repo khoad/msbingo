@@ -220,10 +220,10 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 			return records[shortAttribute], nil
 		}
 	} else if prefixIndex != -1 {
-		if !isNameIndexAssigned {
-			return records[prefixAttributeA+byte(prefixIndex)], nil
-		} else {
+		if isNameIndexAssigned || localHasStrPrefix {
 			return records[prefixDictionaryAttributeA+byte(prefixIndex)], nil
+		} else {
+			return records[prefixAttributeA+byte(prefixIndex)], nil
 		}
 	} else {
 		if isXmlns {

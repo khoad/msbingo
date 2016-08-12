@@ -391,7 +391,7 @@ func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml
 	if err != nil {
 		return err
 	}
-	_, err = writeDictionaryString(e, attr.Name.Local)
+	err = writeDictionaryBytes(e, attr.Name.Local)
 	if err != nil {
 		return err
 	}
