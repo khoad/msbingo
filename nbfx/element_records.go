@@ -111,7 +111,7 @@ func (r *prefixDictionaryElementAZRecord) encodeElement(e *encoder, element xml.
 	if err != nil {
 		return err
 	}
-	_, err = writeMultiByteInt31(e, e.dict[element.Name.Local])
+	err = writeDictionaryString(e, element.Name.Local)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (r *shortDictionaryElementRecord) encodeElement(e *encoder, element xml.Sta
 	if err != nil {
 		return err
 	}
-	err = writeDictionaryBytes(e, element.Name.Local)
+	err = writeDictionaryString(e, element.Name.Local)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (r *dictionaryElementRecord) encodeElement(e *encoder, element xml.StartEle
 	if err != nil {
 		return err
 	}
-	err = writeDictionaryBytes(e, element.Name.Local)
+	err = writeDictionaryString(e, element.Name.Local)
 	if err != nil {
 		return err
 	}

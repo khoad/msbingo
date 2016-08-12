@@ -168,7 +168,7 @@ func (r *shortDictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 		return err
 	}
 
-	err = writeDictionaryBytes(e, attr.Name.Local)
+	err = writeDictionaryString(e, attr.Name.Local)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func (r *dictionaryAttributeRecord) encodeAttribute(e *encoder, attr xml.Attr) e
 		return err
 	}
 
-	err = writeDictionaryBytes(e, attr.Name.Local)
+	err = writeDictionaryString(e, attr.Name.Local)
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (r *shortDictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr x
 	if err != nil {
 		return err
 	}
-	return writeDictionaryBytes(e, attr.Value)
+	return writeDictionaryString(e, attr.Value)
 }
 
 //(0x0B)
@@ -358,7 +358,7 @@ func (r *dictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 	if err != nil {
 		return err
 	}
-	return writeDictionaryBytes(e, attr.Value)
+	return writeDictionaryString(e, attr.Value)
 }
 
 //(0x0C-0x25)
@@ -391,7 +391,7 @@ func (r *prefixDictionaryAttributeAZRecord) encodeAttribute(e *encoder, attr xml
 	if err != nil {
 		return err
 	}
-	err = writeDictionaryBytes(e, attr.Name.Local)
+	err = writeDictionaryString(e, attr.Name.Local)
 	if err != nil {
 		return err
 	}

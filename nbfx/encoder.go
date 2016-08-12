@@ -178,7 +178,7 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 			return records[shortElement], nil
 		}
 	} else if prefixIndex != -1 {
-		if isNameIndexAssigned {
+		if isNameIndexAssigned || localHasStrPrefix {
 			return records[prefixDictionaryElementA+byte(prefixIndex)], nil
 		} else {
 			return records[prefixElementA+byte(prefixIndex)], nil
@@ -254,14 +254,6 @@ func writeString(e *encoder, str string) (int, error) {
 	return lenByteLen + strByteLen, err
 }
 
-func writeDictionaryString(e *encoder, str string) (int, error) {
-	key, ok := e.dict[str]
-	if !ok {
-		return 0, errors.New(fmt.Sprint("Value %s not found in dictionary for DictionaryString record", str))
-	}
-	return writeMultiByteInt31(e, uint32(key))
-}
-
 func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	max := uint32(2147483647)
 	if num > max {
@@ -308,10 +300,9 @@ func writeUuidText(e *encoder, text string) error {
 	return nil
 }
 
-func writeDictionaryBytes(e *encoder, str string) error {
+func writeDictionaryString(e *encoder, str string) error {
 	if val, ok := e.dict[str]; ok {
-		valString := strconv.Itoa(int(val))
-		_, err := writeString(e, valString)
+		_, err := writeMultiByteInt31(e, val)
 		if err != nil {
 			return err
 		}

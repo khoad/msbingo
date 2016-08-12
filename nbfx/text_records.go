@@ -321,8 +321,7 @@ func (r *dictionaryTextRecord) readText(d *decoder) (string, error) {
 }
 
 func (r *dictionaryTextRecord) writeText(e *encoder, text string) error {
-	_, err := writeDictionaryString(e, text)
-	return err
+	return writeDictionaryString(e, text)
 }
 
 type uniqueIdTextRecord struct {
