@@ -7,12 +7,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"io"
 	"math"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/satori/go.uuid"
 )
 
 type decoder struct {
@@ -34,7 +35,7 @@ func NewDecoder() Decoder {
 }
 
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
-	decoder := &decoder{make(map[uint32]string), Stack{}, nil, nil}
+	decoder := &decoder{dict: map[uint32]string{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			decoder.addDictionaryString(k, v)
@@ -271,7 +272,7 @@ func readBytes(reader io.Reader, numBytes uint32) (*bytes.Buffer, error) {
 	}
 
 	if uint32(b) < numBytes {
-		nextBuf, err := readBytes(reader, numBytes - uint32(b))
+		nextBuf, err := readBytes(reader, numBytes-uint32(b))
 		if err != nil {
 			return &buf, err
 		}
@@ -434,7 +435,7 @@ func readDecimalText(d *decoder) (string, error) {
 	binary.Read(buf, binary.LittleEndian, &lo64)
 
 	//(Hi32 * 2^64 + Lo64) / 10^scale
-	val := (float64(hi32) * (1<<64) + float64(lo64))/math.Pow10(int(scale))
+	val := (float64(hi32)*(1<<64) + float64(lo64)) / math.Pow10(int(scale))
 
 	if sign == 0x80 {
 		val *= -1

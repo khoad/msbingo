@@ -31,7 +31,7 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{make(map[string]uint32), nil, nil, &Queue{}}
+	encoder := &encoder{dict: map[string]uint32{}, tokenBuffer: &Queue{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			encoder.addDictionaryString(k, v)
