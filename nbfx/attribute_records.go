@@ -427,3 +427,20 @@ func (r *prefixAttributeAZRecord) decodeAttribute(d *decoder) (xml.Attr, error) 
 	}
 	return xml.Attr{Name: xml.Name{Local: string('a'+r.id-prefixAttributeA) + ":" + name}, Value: text}, nil
 }
+
+func (r *prefixAttributeAZRecord) encodeAttribute(e *encoder, attr xml.Attr) error {
+	err := e.bin.WriteByte(r.id)
+	if err != nil {
+		return err
+	}
+	_, err = writeString(e, attr.Name.Local)
+	if err != nil {
+		return err
+	}
+	textRecord, err := e.getTextRecordFromText(attr.Value, false)
+	if err != nil {
+		return err
+	}
+	textEncoder := textRecord.(textRecordEncoder)
+	return textEncoder.encodeText(e, textEncoder, attr.Value)
+}
