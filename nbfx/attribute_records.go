@@ -358,8 +358,7 @@ func (r *dictionaryXmlnsAttributeRecord) encodeAttribute(e *encoder, attr xml.At
 	if err != nil {
 		return err
 	}
-	_, err = writeDictionaryString(e, attr.Value)
-	return err
+	return writeDictionaryBytes(e, attr.Value)
 }
 
 //(0x0C-0x25)

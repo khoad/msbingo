@@ -227,10 +227,10 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 		}
 	} else {
 		if isXmlns {
-			if !isNameIndexAssigned {
-				return records[xmlnsAttribute], nil
-			} else {
+			if isNameIndexAssigned || valueHasStrPrefix {
 				return records[dictionaryXmlnsAttribute], nil
+			} else {
+				return records[xmlnsAttribute], nil
 			}
 		} else {
 			if isNameIndexAssigned || localHasStrPrefix {
