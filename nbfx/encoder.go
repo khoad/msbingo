@@ -16,7 +16,7 @@ type encoder struct {
 	dict        map[string]uint32
 	xml         *xml.Decoder
 	bin         *bytes.Buffer
-	tokenBuffer *Queue
+	tokenBuffer Queue
 }
 
 func (e *encoder) addDictionaryString(index uint32, value string) {
@@ -31,7 +31,7 @@ func NewEncoder() Encoder {
 }
 
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
-	encoder := &encoder{dict: map[string]uint32{}, tokenBuffer: &Queue{}}
+	encoder := &encoder{dict: map[string]uint32{}}
 	if dictionaryStrings != nil {
 		for k, v := range dictionaryStrings {
 			encoder.addDictionaryString(k, v)
