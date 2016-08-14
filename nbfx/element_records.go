@@ -239,12 +239,15 @@ func (r *prefixElementAZRecord) decodeElement(d *decoder) (record, error) {
 }
 
 func (r *prefixElementAZRecord) encodeElement(e *encoder, element xml.StartElement) error {
-	_, err := e.bin.Write([]byte{prefixElementA + (r.id - prefixElementA)})
+	err := e.bin.WriteByte(prefixElementA + (r.id - prefixElementA))
 	if err != nil {
 		return err
 	}
 	_, err = writeString(e, element.Name.Local)
-	return err
+	if err != nil {
+		return err
+	}
+	return r.encodeAttributes(e, element.Attr)
 }
 
 // 0x41
