@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"strconv"
+	"encoding/binary"
 )
 
 func init() {
@@ -176,12 +178,28 @@ func (r *int8TextRecord) readText(d *decoder) (string, error) {
 	return readInt8Text(d)
 }
 
+func (r *int8TextRecord) writeText(e * encoder, text string) error {
+	i, err := strconv.ParseInt(text, 10, 8)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, int8(i))
+}
+
 type int16TextRecord struct {
 	textRecordBase
 }
 
 func (r *int16TextRecord) readText(d *decoder) (string, error) {
 	return readInt16Text(d)
+}
+
+func (r *int16TextRecord) writeText(e * encoder, text string) error {
+	i, err := strconv.ParseInt(text, 10, 16)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, int16(i))
 }
 
 type int32TextRecord struct {
@@ -192,12 +210,28 @@ func (r *int32TextRecord) readText(d *decoder) (string, error) {
 	return readInt32Text(d)
 }
 
+func (r *int32TextRecord) writeText(e * encoder, text string) error {
+	i, err := strconv.ParseInt(text, 10, 32)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, int32(i))
+}
+
 type int64TextRecord struct {
 	textRecordBase
 }
 
 func (r *int64TextRecord) readText(d *decoder) (string, error) {
 	return readInt64Text(d)
+}
+
+func (r *int64TextRecord) writeText(e * encoder, text string) error {
+	i, err := strconv.ParseInt(text, 10, 64)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, int64(i))
 }
 
 type floatTextRecord struct {

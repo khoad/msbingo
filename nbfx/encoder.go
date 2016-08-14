@@ -8,6 +8,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"math"
 
 	"github.com/satori/go.uuid"
 )
@@ -142,6 +143,18 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		id = uuidText
 	} else if isUniqueId(text) {
 		id = uniqueIdText
+	} else if i, err := strconv.ParseInt(text, 10, 0); err == nil {
+		if math.MinInt8 <= i && i <= math.MaxInt8 {
+			id = int8Text
+		} else if math.MinInt16 <= i && i <= math.MaxInt16 {
+			id = int16Text
+		} else if math.MinInt32 <= i && i <= math.MaxInt32 {
+			id = int32Text
+		} else if math.MinInt64 <= i && i <= math.MaxInt64 {
+			id = int64Text
+		} else {
+			return nil, fmt.Errorf("Unknown integer record %v", i)
+		}
 	} else {
 		if _, ok := e.dict[text]; ok {
 			id = dictionaryText
@@ -260,16 +273,16 @@ func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
 	}
 	if num < mask_mbi31 {
-		return e.bin.Write([]byte{byte(num)})
+		return 1, e.bin.WriteByte(byte(num))
 	}
 	q := num / mask_mbi31
 	rem := num % mask_mbi31
-	n1, err := e.bin.Write([]byte{byte(mask_mbi31 + rem)})
+	err := e.bin.WriteByte(byte(mask_mbi31 + rem))
 	if err != nil {
-		return n1, err
+		return 1, err
 	}
-	n2, err := writeMultiByteInt31(e, q)
-	return n1 + n2, err
+	n, err := writeMultiByteInt31(e, q)
+	return n + 1, err
 }
 
 func writeChars8Text(e *encoder, text string) error {
