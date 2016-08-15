@@ -155,6 +155,8 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		} else {
 			return nil, fmt.Errorf("Unknown integer record %v", i)
 		}
+	} else if _, err := strconv.ParseFloat(text, 32); err == nil {
+		id = floatText
 	} else {
 		if _, ok := e.dict[text]; ok {
 			id = dictionaryText

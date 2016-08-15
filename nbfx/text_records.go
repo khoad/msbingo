@@ -242,6 +242,14 @@ func (r *floatTextRecord) readText(d *decoder) (string, error) {
 	return readFloatText(d)
 }
 
+func (r *floatTextRecord) writeText(e *encoder, text string) error {
+	f, err := strconv.ParseFloat(text, 32);
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, float32(f))
+}
+
 type doubleTextRecord struct {
 	textRecordBase
 }
