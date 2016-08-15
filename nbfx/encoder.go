@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
-	"math"
 
 	"github.com/satori/go.uuid"
 )
@@ -155,8 +155,12 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		} else {
 			return nil, fmt.Errorf("Unknown integer record %v", i)
 		}
-	} else if _, err := strconv.ParseFloat(text, 32); err == nil {
-		id = floatText
+	} else if _, err := strconv.ParseFloat(text, 64); err == nil {
+		if isFloat32(text) {
+			id = floatText
+		} else {
+			id = doubleText
+		}
 	} else {
 		if _, ok := e.dict[text]; ok {
 			id = dictionaryText
@@ -171,6 +175,15 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		return rec, nil
 	}
 	return nil, errors.New(fmt.Sprintf("Unknown text record id %#X for %s withEndElement %v", id, text, withEndElement))
+}
+
+func isFloat32(s string) bool {
+	f3264, err := strconv.ParseFloat(s, 32)
+	if err != nil {
+		return false
+	}
+	f32 := float32(f3264)
+	return fmt.Sprint(f32) == s
 }
 
 func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) (record, error) {

@@ -1,11 +1,11 @@
 package nbfx
 
 import (
+	"encoding/binary"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"strconv"
-	"encoding/binary"
 )
 
 func init() {
@@ -178,7 +178,7 @@ func (r *int8TextRecord) readText(d *decoder) (string, error) {
 	return readInt8Text(d)
 }
 
-func (r *int8TextRecord) writeText(e * encoder, text string) error {
+func (r *int8TextRecord) writeText(e *encoder, text string) error {
 	i, err := strconv.ParseInt(text, 10, 8)
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func (r *int16TextRecord) readText(d *decoder) (string, error) {
 	return readInt16Text(d)
 }
 
-func (r *int16TextRecord) writeText(e * encoder, text string) error {
+func (r *int16TextRecord) writeText(e *encoder, text string) error {
 	i, err := strconv.ParseInt(text, 10, 16)
 	if err != nil {
 		return err
@@ -210,7 +210,7 @@ func (r *int32TextRecord) readText(d *decoder) (string, error) {
 	return readInt32Text(d)
 }
 
-func (r *int32TextRecord) writeText(e * encoder, text string) error {
+func (r *int32TextRecord) writeText(e *encoder, text string) error {
 	i, err := strconv.ParseInt(text, 10, 32)
 	if err != nil {
 		return err
@@ -226,7 +226,7 @@ func (r *int64TextRecord) readText(d *decoder) (string, error) {
 	return readInt64Text(d)
 }
 
-func (r *int64TextRecord) writeText(e * encoder, text string) error {
+func (r *int64TextRecord) writeText(e *encoder, text string) error {
 	i, err := strconv.ParseInt(text, 10, 64)
 	if err != nil {
 		return err
@@ -243,7 +243,7 @@ func (r *floatTextRecord) readText(d *decoder) (string, error) {
 }
 
 func (r *floatTextRecord) writeText(e *encoder, text string) error {
-	f, err := strconv.ParseFloat(text, 32);
+	f, err := strconv.ParseFloat(text, 32)
 	if err != nil {
 		return err
 	}
@@ -256,6 +256,14 @@ type doubleTextRecord struct {
 
 func (r *doubleTextRecord) readText(d *decoder) (string, error) {
 	return readDoubleText(d)
+}
+
+func (r *doubleTextRecord) writeText(e *encoder, text string) error {
+	f, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, f)
 }
 
 type decimalTextRecord struct {
