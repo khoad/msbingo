@@ -552,8 +552,14 @@ func TestEncodeExampleUInt64TextWithEndElement(t *testing.T) {
 }
 
 func TestEncodeExampleBoolText(t *testing.T) {
+	// Using true/false text is more efficient than bool text anyway
+
+	//testEncode(t,
+	//	[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xB4, 0x01, 0x01},
+	//	"<doc>true</doc>")
+
 	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xB4, 0x01, 0x01},
+		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x87},
 		"<doc>true</doc>")
 }
 
