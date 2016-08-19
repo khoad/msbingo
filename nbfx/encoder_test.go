@@ -2,7 +2,9 @@ package nbfx
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -288,11 +290,7 @@ func TestEncodeExampleDateTimeTextWithEndElement(t *testing.T) {
 		"<str108>2006-05-17T00:00:00</str108>")
 }
 
-func TestEncodeExampleChars8Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x98, 0x05, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x01},
-		"<doc>hello</doc>")
-}
+// TestEncodeExampleChars8Text would be INVALID since encoder will always try to encode withEndElement to save bytes
 
 func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 	testEncode(t,
@@ -300,28 +298,40 @@ func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 		"<a>hello</a>")
 }
 
-func TestEncodeExampleChars16Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x9A, 0x05, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x01},
-		"<doc>hello</doc>")
-}
+// TestEncodeExampleChars16Text would be INVALID since encoder will always try to encode withEndElement to save bytes
 
 func TestEncodeExampleChars16TextWithEndElement(t *testing.T) {
+	n := math.MaxUint8 + 1
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x9B})
+	binary.Write(bytBuffer, binary.LittleEndian, uint16(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a>")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x62)
+		strBuffer.WriteString("b")
+	}
+	strBuffer.WriteString("</a>")
 	testEncode(t,
-		[]byte{0x40, 0x01, 0x61, 0x9B, 0x05, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F},
-		"<a>hello</a>")
+		bytBuffer.Bytes(),
+		strBuffer.String())
 }
 
-func TestEncodeExampleChars32Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x9C, 0x05, 0x00, 0x00, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x01},
-		"<doc>hello</doc>")
-}
+// TestEncodeExampleChars32Text would be INVALID since encoder will always try to encode withEndElement to save bytes
 
 func TestEncodeExampleChars32TextWithEndElement(t *testing.T) {
+	n := math.MaxUint16 + 1
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x9D})
+	binary.Write(bytBuffer, binary.LittleEndian, int32(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a>")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x62)
+		strBuffer.WriteString("b")
+	}
+	strBuffer.WriteString("</a>")
 	testEncode(t,
-		[]byte{0x40, 0x01, 0x61, 0x9D, 0x05, 0x00, 0x00, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F},
-		"<a>hello</a>")
+		bytBuffer.Bytes(),
+		strBuffer.String())
 }
 
 func TestEncodeExampleBytes8Text(t *testing.T) {

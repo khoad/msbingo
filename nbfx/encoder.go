@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"encoding/binary"
+
 	"github.com/satori/go.uuid"
 )
 
@@ -165,7 +167,16 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		if _, ok := e.dict[text]; ok {
 			id = dictionaryText
 		} else {
-			id = chars8Text
+			lenText := len(text)
+			if lenText <= math.MaxUint8 {
+				id = chars8Text
+			} else if lenText < math.MaxUint16 {
+				id = chars16Text
+			} else if lenText < math.MaxUint32 {
+				id = chars32Text
+			} else {
+				return nil, fmt.Errorf("Text too long, didn't encode: %v", text)
+			}
 		}
 	}
 	if id != 0 && withEndElement {
@@ -307,10 +318,24 @@ func writeChars8Text(e *encoder, text string) error {
 	return err
 }
 
+func writeChars16Text(e *encoder, text string) error {
+	bytes := []byte(text)
+	err := binary.Write(e.bin, binary.LittleEndian, uint16(len(bytes)))
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(bytes)
+	return err
+}
+
 func writeChars32Text(e *encoder, text string) error {
 	bytes := []byte(text)
-	writeMultiByteInt31(e, uint32(len(bytes)))
-	_, err := e.bin.Write(bytes)
+	// PER SPEC: int32 NOT uint32
+	err := binary.Write(e.bin, binary.LittleEndian, int32(len(bytes)))
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(bytes)
 	return err
 }
 

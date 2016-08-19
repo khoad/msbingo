@@ -306,6 +306,10 @@ type chars32TextRecord struct {
 	textRecordBase
 }
 
+func (r *chars16TextRecord) writeText(e *encoder, text string) error {
+	return writeChars16Text(e, text)
+}
+
 func (r *chars32TextRecord) readText(d *decoder) (string, error) {
 	return readChars32Text(d)
 }
