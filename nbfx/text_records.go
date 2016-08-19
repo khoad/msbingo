@@ -458,6 +458,14 @@ func (r *uInt64TextRecord) readText(d *decoder) (string, error) {
 	return readUInt64Text(d)
 }
 
+func (r *uInt64TextRecord) writeText(e *encoder, text string) error {
+	i, err := strconv.ParseUint(text, 10, 0)
+	if err != nil {
+		return err
+	}
+	return binary.Write(e.bin, binary.LittleEndian, uint64(i))
+}
+
 type boolTextRecord struct {
 	textRecordBase
 }
