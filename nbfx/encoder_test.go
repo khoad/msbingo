@@ -714,12 +714,19 @@ func assertBinEqual(t *testing.T, actual, expected []byte) {
 	}
 	for i, b := range actual {
 		if i == len(expected) || b != expected[i] {
-			pointerLine := "^^"
-			for j := 1; j <= i; j++ {
-				pointerLine = "--" + pointerLine
-			}
-			t.Error(fmt.Sprintf("actual\n%x\ndiffers from expected at index %d\n%x\n%s\n", actual, i, expected, pointerLine))
+			pointerLine(t, actual, expected, i)
 			return
 		}
 	}
+	if len(actual) != len(expected) {
+		pointerLine(t, actual, expected, len(actual))
+	}
+}
+
+func pointerLine(t *testing.T, actual, expected []byte, i int) {
+	pointerLine := "^^"
+	for j := 1; j <= i; j++ {
+		pointerLine = "--" + pointerLine
+	}
+	t.Error(fmt.Sprintf("actual\n%x\ndiffers from expected at index %d\n%x\n%s\n", actual, i, expected, pointerLine))
 }

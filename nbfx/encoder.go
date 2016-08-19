@@ -157,6 +157,8 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		} else {
 			return nil, fmt.Errorf("Unknown integer record %v", i)
 		}
+	} else if _, err := strconv.ParseUint(text, 10, 0); err == nil {
+		id = uInt64Text
 	} else if _, err := strconv.ParseFloat(text, 64); err == nil {
 		if isFloat32(text) {
 			id = floatText
