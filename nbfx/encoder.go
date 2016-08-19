@@ -179,6 +179,8 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 	} else {
 		if _, ok := e.dict[text]; ok || hasSpecialDictionaryPrefix(text) {
 			id = dictionaryText
+		} else if isQNameDictionaryText(text) {
+			id = qNameDictionaryText
 		} else {
 			lenText := len(text)
 			if lenText <= math.MaxUint8 {
@@ -199,6 +201,14 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		return rec, nil
 	}
 	return nil, errors.New(fmt.Sprintf("Unknown text record id %#X for %s withEndElement %v", id, text, withEndElement))
+}
+
+func isQNameDictionaryText(text string) bool {
+	if text[1] != ':' {
+		return false
+	}
+	prefix := text[0]
+	return 'a' <= prefix && prefix <= 'z'
 }
 
 func isFloat32(s string) bool {

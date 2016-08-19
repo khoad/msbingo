@@ -515,3 +515,12 @@ type qNameDictionaryTextRecord struct {
 func (r *qNameDictionaryTextRecord) readText(d *decoder) (string, error) {
 	return readQNameDictionaryText(d)
 }
+
+func (r *qNameDictionaryTextRecord) writeText(e *encoder, text string) error {
+	prefix := text[0]
+	err := e.bin.WriteByte(byte(prefix - 'a'))
+	if err != nil {
+		return err
+	}
+	return writeDictionaryString(e, text[2:])
+}
