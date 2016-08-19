@@ -175,7 +175,7 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 			return nil, fmt.Errorf("Base64 text too long, didn't encode: %v", text)
 		}
 	} else {
-		if _, ok := e.dict[text]; ok {
+		if _, ok := e.dict[text]; ok || hasSpecialDictionaryPrefix(text) {
 			id = dictionaryText
 		} else {
 			lenText := len(text)
@@ -219,7 +219,7 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
-	localHasStrPrefix := strings.HasPrefix(startElement.Name.Local, "str")
+	localHasStrPrefix := hasSpecialDictionaryPrefix(startElement.Name.Local)
 
 	if prefix == "" {
 		if isNameIndexAssigned || localHasStrPrefix {
@@ -255,8 +255,8 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 	if _, ok := e.dict[name]; ok {
 		isNameIndexAssigned = true
 	}
-	localHasStrPrefix := strings.HasPrefix(attr.Name.Local, "str")
-	valueHasStrPrefix := strings.HasPrefix(attr.Value, "str")
+	localHasStrPrefix := hasSpecialDictionaryPrefix(attr.Name.Local)
+	valueHasStrPrefix := hasSpecialDictionaryPrefix(attr.Value)
 
 	if prefix == "" {
 		if isXmlns {
@@ -292,6 +292,10 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 		}
 	}
 	return nil, errors.New(fmt.Sprint("getAttributeRecordFromToken unable to resolve", attr))
+}
+
+func hasSpecialDictionaryPrefix(str string) bool {
+	return strings.HasPrefix(str, "str")
 }
 
 func writeString(e *encoder, str string) (int, error) {
@@ -370,7 +374,7 @@ func writeDictionaryString(e *encoder, str string) error {
 		if err != nil {
 			return err
 		}
-	} else if strings.HasPrefix(str, "str") {
+	} else if hasSpecialDictionaryPrefix(str) {
 		// capture "8" in "str8" and write "8"
 		numString := str[3:]
 		numInt, err := strconv.Atoi(numString)
