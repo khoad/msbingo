@@ -407,8 +407,21 @@ func TestEncodeExampleEmptyText(t *testing.T) {
 }
 
 func TestEncodeExampleEmptyTextWithEndElement(t *testing.T) {
+	// This test is somewhat INVALID because when encoder sees an End Element,
+	// it will encode the End Element (0x01) instead of the Empty Text with end element (0xA9)
+	// In order to make this test pass like previously desired (encoding Empty Text with end
+	// element 0xA9):
+
+	//testEncode(t,
+	//	[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xA9},
+	//	"<doc></doc>")
+
+	// We would have to check for the previous Start Element and see if there is no attribute,
+	// and check for the "Empty Text" which would be an End Element. Considering the whole
+	// point of the codec is to save bytes, it doesn't save anymore bytes and introduce
+	// unnecessary complexity. So for this test, let's have it encode a simple End Element
 	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xA9},
+		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x01},
 		"<doc></doc>")
 }
 

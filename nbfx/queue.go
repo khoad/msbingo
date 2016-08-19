@@ -30,7 +30,7 @@ func (q *Queue) Enqueue(value interface{}) {
 	q.length++
 }
 
-// Remove the first element from the queue and return it's value
+// Remove the first element from the queue and return its value
 // If the queue is empty, return nil
 func (q *Queue) Dequeue() (value interface{}) {
 	if q.length > 0 {
