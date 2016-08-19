@@ -163,6 +163,17 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		} else {
 			id = doubleText
 		}
+	} else if bSlice, err := b64.DecodeString(text); err == nil {
+		lenBytes := len(bSlice)
+		if lenBytes <= math.MaxUint8 {
+			id = bytes8Text
+		} else if lenBytes < math.MaxUint16 {
+			id = bytes16Text
+		} else if lenBytes < math.MaxUint32 {
+			id = bytes32Text
+		} else {
+			return nil, fmt.Errorf("Base64 text too long, didn't encode: %v", text)
+		}
 	} else {
 		if _, ok := e.dict[text]; ok {
 			id = dictionaryText

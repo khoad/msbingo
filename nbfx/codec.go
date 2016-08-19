@@ -1,6 +1,7 @@
 package nbfx
 
 import (
+	"encoding/base64"
 	"io"
 )
 
@@ -14,6 +15,8 @@ type Decoder interface {
 
 // for MultiByteInt31
 const mask_mbi31 = uint32(0x80) //0x80 = 128
+
+var b64 = base64.StdEncoding.WithPadding(base64.StdPadding)
 
 const (
 	endElement                        byte = 0x01

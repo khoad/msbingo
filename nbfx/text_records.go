@@ -326,6 +326,19 @@ func (r *bytes8TextRecord) readText(d *decoder) (string, error) {
 	return readBytes8Text(d)
 }
 
+func (r *bytes8TextRecord) writeText(e *encoder, text string) error {
+	byteSlice, err := b64.DecodeString(text)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(e.bin, binary.LittleEndian, uint8(len(byteSlice)))
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(byteSlice)
+	return err
+}
+
 type bytes16TextRecord struct {
 	textRecordBase
 }
@@ -334,8 +347,35 @@ func (r *bytes16TextRecord) readText(d *decoder) (string, error) {
 	return readBytes16Text(d)
 }
 
+func (r *bytes16TextRecord) writeText(e *encoder, text string) error {
+	byteSlice, err := b64.DecodeString(text)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(e.bin, binary.LittleEndian, uint16(len(byteSlice)))
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(byteSlice)
+	return err
+}
+
 type bytes32TextRecord struct {
 	textRecordBase
+}
+
+func (r *bytes32TextRecord) writeText(e *encoder, text string) error {
+	byteSlice, err := b64.DecodeString(text)
+	if err != nil {
+		return err
+	}
+	// PER SPEC: int32 not uint32
+	err = binary.Write(e.bin, binary.LittleEndian, int32(len(byteSlice)))
+	if err != nil {
+		return err
+	}
+	_, err = e.bin.Write(byteSlice)
+	return err
 }
 
 func (r *bytes32TextRecord) readText(d *decoder) (string, error) {

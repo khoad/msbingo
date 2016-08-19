@@ -291,6 +291,7 @@ func TestEncodeExampleDateTimeTextWithEndElement(t *testing.T) {
 }
 
 // TestEncodeExampleChars8Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 	testEncode(t,
@@ -299,9 +300,10 @@ func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 }
 
 // TestEncodeExampleChars16Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleChars16TextWithEndElement(t *testing.T) {
-	n := math.MaxUint8 + 1
+	n := math.MaxUint8 + 2
 	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x9B})
 	binary.Write(bytBuffer, binary.LittleEndian, uint16(n))
 	strBuffer := bytes.Buffer{}
@@ -317,9 +319,10 @@ func TestEncodeExampleChars16TextWithEndElement(t *testing.T) {
 }
 
 // TestEncodeExampleChars32Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleChars32TextWithEndElement(t *testing.T) {
-	n := math.MaxUint16 + 1
+	n := math.MaxUint16 + 2
 	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x9D})
 	binary.Write(bytBuffer, binary.LittleEndian, int32(n))
 	strBuffer := bytes.Buffer{}
@@ -334,11 +337,8 @@ func TestEncodeExampleChars32TextWithEndElement(t *testing.T) {
 		strBuffer.String())
 }
 
-func TestEncodeExampleBytes8Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x9E, 0x08, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x01},
-		"<doc>AAECAwQFBgc=</doc>")
-}
+// TestEncodeExampleBytes8Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleBytes8TextWithEndElement(t *testing.T) {
 	testEncode(t,
@@ -346,28 +346,46 @@ func TestEncodeExampleBytes8TextWithEndElement(t *testing.T) {
 		"<Base64>AAECAwQFBgc=</Base64>")
 }
 
-func TestEncodeExampleBytes16Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xA0, 0x08, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x01},
-		"<doc>AAECAwQFBgc=</doc>")
-}
+// TestEncodeExampleBytes16Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleBytes16TextWithEndElement(t *testing.T) {
+	n := math.MaxUint8 + 3
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x06, 0x42, 0x61, 0x73, 0x65, 0x36, 0x34, 0xA1})
+	binary.Write(bytBuffer, binary.LittleEndian, uint16(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<Base64>")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x05)
+		if i%3 == 0 {
+			strBuffer.WriteString("BQUF")
+		}
+	}
+	strBuffer.WriteString("</Base64>")
 	testEncode(t,
-		[]byte{0x40, 0x06, 0x42, 0x61, 0x73, 0x65, 0x36, 0x34, 0xA1, 0x08, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
-		"<Base64>AAECAwQFBgc=</Base64>")
+		bytBuffer.Bytes(),
+		strBuffer.String())
 }
 
-func TestEncodeExampleBytes32Text(t *testing.T) {
-	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xA2, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x01},
-		"<doc>AAECAwQFBgc=</doc>")
-}
+// TestEncodeExampleBytes32Text would be INVALID since encoder will always try to encode withEndElement to save bytes
+// Maybe test the text record from an attribute?
 
 func TestEncodeExampleBytes32TextWithEndElement(t *testing.T) {
+	n := math.MaxUint16 + 3
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x06, 0x42, 0x61, 0x73, 0x65, 0x36, 0x34, 0xA3})
+	binary.Write(bytBuffer, binary.LittleEndian, int32(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<Base64>")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x05)
+		if i%3 == 0 {
+			strBuffer.WriteString("BQUF")
+		}
+	}
+	strBuffer.WriteString("</Base64>")
 	testEncode(t,
-		[]byte{0x40, 0x06, 0x42, 0x61, 0x73, 0x65, 0x36, 0x34, 0xA3, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07},
-		"<Base64>AAECAwQFBgc=</Base64>")
+		bytBuffer.Bytes(),
+		strBuffer.String())
 }
 
 func TestEncodeExampleStartListText(t *testing.T) {

@@ -2,7 +2,6 @@ package nbfx
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/xml"
 	"errors"
@@ -104,8 +103,6 @@ func readString(reader io.Reader) (string, error) {
 		return readMultiByteInt31(r)
 	})
 }
-
-var b64 = base64.StdEncoding.WithPadding(base64.StdPadding)
 
 func readBytes8Text(d *decoder) (string, error) {
 	var err error
