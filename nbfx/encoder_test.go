@@ -290,8 +290,11 @@ func TestEncodeExampleDateTimeTextWithEndElement(t *testing.T) {
 		"<str108>2006-05-17T00:00:00</str108>")
 }
 
-// TestEncodeExampleChars8Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleChars8Text(t *testing.T) {
+	testEncode(t,
+		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x06, 0x00, 0x98, 0x05, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x01},
+		"<doc str0=\"hello\"></doc>")
+}
 
 func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 	testEncode(t,
@@ -299,8 +302,22 @@ func TestEncodeExampleChars8TextWithEndElement(t *testing.T) {
 		"<a>hello</a>")
 }
 
-// TestEncodeExampleChars16Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleChars16Text(t *testing.T) {
+	n := math.MaxUint8 + 2
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x06, 0x00, 0x9A})
+	binary.Write(bytBuffer, binary.LittleEndian, uint16(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a str0=\"")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x62)
+		strBuffer.WriteString("b")
+	}
+	bytBuffer.WriteByte(0x01)
+	strBuffer.WriteString("\"></a>")
+	testEncode(t,
+		bytBuffer.Bytes(),
+		strBuffer.String())
+}
 
 func TestEncodeExampleChars16TextWithEndElement(t *testing.T) {
 	n := math.MaxUint8 + 2
@@ -318,8 +335,22 @@ func TestEncodeExampleChars16TextWithEndElement(t *testing.T) {
 		strBuffer.String())
 }
 
-// TestEncodeExampleChars32Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleChars32Text(t *testing.T) {
+	n := math.MaxUint16 + 2
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x06, 0x00, 0x9C})
+	binary.Write(bytBuffer, binary.LittleEndian, int32(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a str0=\"")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x62)
+		strBuffer.WriteString("b")
+	}
+	bytBuffer.WriteByte(0x01)
+	strBuffer.WriteString("\"></a>")
+	testEncode(t,
+		bytBuffer.Bytes(),
+		strBuffer.String())
+}
 
 func TestEncodeExampleChars32TextWithEndElement(t *testing.T) {
 	n := math.MaxUint16 + 2
@@ -337,8 +368,11 @@ func TestEncodeExampleChars32TextWithEndElement(t *testing.T) {
 		strBuffer.String())
 }
 
-// TestEncodeExampleBytes8Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleBytes8Text(t *testing.T) {
+	testEncode(t,
+		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x06, 0x00, 0x9E, 0x08, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x01},
+		"<doc str0=\"AAECAwQFBgc=\"></doc>")
+}
 
 func TestEncodeExampleBytes8TextWithEndElement(t *testing.T) {
 	testEncode(t,
@@ -346,8 +380,24 @@ func TestEncodeExampleBytes8TextWithEndElement(t *testing.T) {
 		"<Base64>AAECAwQFBgc=</Base64>")
 }
 
-// TestEncodeExampleBytes16Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleBytes16(t *testing.T) {
+	n := math.MaxUint8 + 3
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x06, 0x00, 0xA0})
+	binary.Write(bytBuffer, binary.LittleEndian, uint16(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a str0=\"")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x05)
+		if i%3 == 0 {
+			strBuffer.WriteString("BQUF")
+		}
+	}
+	bytBuffer.WriteByte(0x01)
+	strBuffer.WriteString("\"></a>")
+	testEncode(t,
+		bytBuffer.Bytes(),
+		strBuffer.String())
+}
 
 func TestEncodeExampleBytes16TextWithEndElement(t *testing.T) {
 	n := math.MaxUint8 + 3
@@ -367,8 +417,24 @@ func TestEncodeExampleBytes16TextWithEndElement(t *testing.T) {
 		strBuffer.String())
 }
 
-// TestEncodeExampleBytes32Text would be INVALID since encoder will always try to encode withEndElement to save bytes
-// Maybe test the text record from an attribute?
+func TestEncodeExampleBytes32(t *testing.T) {
+	n := math.MaxUint16 + 3
+	bytBuffer := bytes.NewBuffer([]byte{0x40, 0x01, 0x61, 0x06, 0x00, 0xA2})
+	binary.Write(bytBuffer, binary.LittleEndian, int32(n))
+	strBuffer := bytes.Buffer{}
+	strBuffer.WriteString("<a str0=\"")
+	for i := 0; i < n; i++ {
+		bytBuffer.WriteByte(0x05)
+		if i%3 == 0 {
+			strBuffer.WriteString("BQUF")
+		}
+	}
+	bytBuffer.WriteByte(0x01)
+	strBuffer.WriteString("\"></a>")
+	testEncode(t,
+		bytBuffer.Bytes(),
+		strBuffer.String())
+}
 
 func TestEncodeExampleBytes32TextWithEndElement(t *testing.T) {
 	n := math.MaxUint16 + 3
@@ -439,8 +505,8 @@ func TestEncodeExampleDictionaryTextWithEndElement(t *testing.T) {
 
 func TestEncodeExampleUniqueIdText(t *testing.T) {
 	testEncode(t,
-		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0xAC, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x01},
-		"<doc>urn:uuid:33221100-5544-7766-8899-aabbccddeeff</doc>")
+		[]byte{0x40, 0x03, 0x64, 0x6F, 0x63, 0x06, 0x00, 0xAC, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x01},
+		"<doc str0=\"urn:uuid:33221100-5544-7766-8899-aabbccddeeff\"></doc>")
 }
 
 func TestEncodeExampleUniqueIdTextWithEndElement(t *testing.T) {
