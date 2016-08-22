@@ -88,20 +88,17 @@ func readByte(reader io.Reader) (byte, error) {
 	return sb[0], err
 }
 
-func readStringBytes(reader io.Reader, readLenFunc func(r io.Reader) (uint32, error)) (string, error) {
-	len, err := readLenFunc(reader)
-	if err != nil {
-		return "", err
-	}
-
+func readStringBytes(reader io.Reader, len uint32) (string, error) {
 	buf, err := readBytes(reader, len)
 	return buf.String(), err
 }
 
 func readString(reader io.Reader) (string, error) {
-	return readStringBytes(reader, func(r io.Reader) (uint32, error) {
-		return readMultiByteInt31(r)
-	})
+	length, err := readMultiByteInt31(reader)
+	if err != nil {
+		return "", err
+	}
+	return readStringBytes(reader, length)
 }
 
 func readBytes8Text(d *decoder) (string, error) {
@@ -150,93 +147,83 @@ func readBytes32Text(d *decoder) (string, error) {
 }
 
 func readChars8Text(d *decoder) (string, error) {
-	return readStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 1)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint8
-		binary.Read(buf, binary.LittleEndian, &val)
-		return uint32(val), err
-	})
-}
-
-func readChars16Text(d *decoder) (string, error) {
-	return readStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 2)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint16
-		binary.Read(buf, binary.LittleEndian, &val)
-		return uint32(val), err
-	})
-}
-
-func readChars32Text(d *decoder) (string, error) {
-	return readStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 4)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint32
-		binary.Read(buf, binary.LittleEndian, &val)
-		return uint32(val), err
-	})
-}
-
-func readUnicodeChars8Text(d *decoder) (string, error) {
-	return readUnicodeStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 1)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint8
-		binary.Read(buf, binary.LittleEndian, &val)
-		val /= 2
-		return uint32(val), err
-	})
-}
-
-func readUnicodeChars16Text(d *decoder) (string, error) {
-	return readUnicodeStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 2)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint8
-		binary.Read(buf, binary.LittleEndian, &val)
-		val /= 2
-		return uint32(val), err
-	})
-}
-
-func readUnicodeChars32Text(d *decoder) (string, error) {
-	return readUnicodeStringBytes(d.bin, func(r io.Reader) (uint32, error) {
-		var err error
-		buf, err := readBytes(d.bin, 4)
-		if err != nil {
-			return uint32(0), err
-		}
-		var val uint8
-		binary.Read(buf, binary.LittleEndian, &val)
-		val /= 2
-		return uint32(val), err
-	})
-}
-
-func readUnicodeStringBytes(r io.Reader, readLenFunc func(r io.Reader) (uint32, error)) (string, error) {
-	len, err := readLenFunc(r)
+	var err error
+	buf, err := readBytes(d.bin, 1)
 	if err != nil {
 		return "", err
 	}
+	var val uint8
+	binary.Read(buf, binary.LittleEndian, &val)
+
+	return readStringBytes(d.bin, uint32(val))
+}
+
+func readChars16Text(d *decoder) (string, error) {
+	var err error
+	buf, err := readBytes(d.bin, 2)
+	if err != nil {
+		return "", err
+	}
+	var val uint16
+	binary.Read(buf, binary.LittleEndian, &val)
+
+	return readStringBytes(d.bin, uint32(val))
+}
+
+func readChars32Text(d *decoder) (string, error) {
+	var err error
+	buf, err := readBytes(d.bin, 4)
+	if err != nil {
+		return "", err
+	}
+	var val uint32
+	binary.Read(buf, binary.LittleEndian, &val)
+
+	return readStringBytes(d.bin, val)
+}
+
+func readUnicodeChars8Text(d *decoder) (string, error) {
+	var err error
+	buf, err := readBytes(d.bin, 1)
+	if err != nil {
+		return "", err
+	}
+	var val uint8
+	binary.Read(buf, binary.LittleEndian, &val)
+	val /= 2
+
+	return readUnicodeStringBytes(d.bin, uint32(val))
+}
+
+func readUnicodeChars16Text(d *decoder) (string, error) {
+	var err error
+	buf, err := readBytes(d.bin, 2)
+	if err != nil {
+		return "", err
+	}
+	var val uint16
+	binary.Read(buf, binary.LittleEndian, &val)
+	val /= 2
+
+	return readUnicodeStringBytes(d.bin, uint32(val))
+}
+
+func readUnicodeChars32Text(d *decoder) (string, error) {
+	var err error
+	buf, err := readBytes(d.bin, 4)
+	if err != nil {
+		return "", err
+	}
+	var val uint32
+	binary.Read(buf, binary.LittleEndian, &val)
+	val /= 2
+
+	return readUnicodeStringBytes(d.bin, val)
+}
+
+func readUnicodeStringBytes(r io.Reader, len uint32) (string, error) {
 	runes := []rune{}
-	for i := uint32(0); i < len; {
+	for i := uint32(0); i < len; i++ {
 		runeBuf, err := readBytes(r, 2)
 		if err != nil {
 			return string(runes), err
@@ -245,7 +232,6 @@ func readUnicodeStringBytes(r io.Reader, readLenFunc func(r io.Reader) (uint32, 
 		binary.Read(runeBuf, binary.LittleEndian, &runeInt)
 		theRune := rune(runeInt)
 		runes = append(runes, theRune)
-		i++
 	}
 	return string(runes), nil
 }
