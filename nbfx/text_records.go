@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func init() {
@@ -388,6 +389,22 @@ type startListTextRecord struct {
 
 func (r *startListTextRecord) readText(d *decoder) (string, error) {
 	return readListText(d)
+}
+
+func (r *startListTextRecord) writeText(e *encoder, text string) error {
+	texts := strings.Split(text, " ")
+	for _, t := range texts {
+		tr, err := e.getTextRecordFromText(t, false)
+		if err != nil {
+			return err
+		}
+		tre := tr.(textRecordEncoder)
+		err = tre.encodeText(e, tre, t)
+		if err != nil {
+			return err
+		}
+	}
+	return e.bin.WriteByte(endListText)
 }
 
 type endListTextRecord struct {

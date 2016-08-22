@@ -141,6 +141,8 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 		id = falseText
 	} else if text == "true" {
 		id = trueText
+	} else if strings.Contains(text, " ") {
+		id = startListText
 	} else if isUuid(text) {
 		id = uuidText
 	} else if isUniqueId(text) {
