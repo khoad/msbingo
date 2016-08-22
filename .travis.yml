@@ -1,4 +1,8 @@
 language: go
 
+addons:
+  code_climate:
+    repo_token: bdd2944e1ec87e40a529acc6c941a6ea5d4dcd40d7dd4cef019a50bd75b12d96
+
 notifications:
   email: false
