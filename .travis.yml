@@ -3,6 +3,13 @@ language: go
 notifications:
   email: false
 
-addons:
-    code_climate:
-        repo_token: bdd2944e1ec87e40a529acc6c941a6ea5d4dcd40d7dd4cef019a50bd75b12d96
+go:
+  - tip
+
+install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+
+script:
+  - go test -v ./nbfx -covermode=count -coverprofile=coverage.out
+  - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
