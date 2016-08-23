@@ -3,8 +3,8 @@ package nbfs
 import (
 	"bytes"
 	"io/ioutil"
-	"testing"
 	"net/http"
+	"testing"
 )
 
 func TestDecodeExample1(t *testing.T) {
