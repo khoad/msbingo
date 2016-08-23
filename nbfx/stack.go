@@ -1,17 +1,19 @@
 package nbfx
 
-//https://gist.github.com/bemasher/1777766
+// Stack is a struct with "top" and "size" properties
+// https://gist.github.com/bemasher/1777766
 type Stack struct {
 	top  *StackElement
 	size int
 }
 
+// StackElement can be used in Stack struct
 type StackElement struct {
 	value interface{} // All types satisfy the empty interface, so we can store anything here.
 	next  *StackElement
 }
 
-// Return the stack's length
+// Len returns the stack's length
 func (s *Stack) Len() int {
 	return s.size
 }
@@ -22,7 +24,7 @@ func (s *Stack) Push(value interface{}) {
 	s.size++
 }
 
-// Remove the top element from the stack and return it's value
+// Pop removes the top element from the stack and return its value
 // If the stack is empty, return nil
 func (s *Stack) Pop() (value interface{}) {
 	if s.size > 0 {
