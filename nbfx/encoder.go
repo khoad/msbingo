@@ -254,7 +254,6 @@ func (e *encoder) getStartElementRecordFromToken(startElement xml.StartElement) 
 			return records[element], nil
 		}
 	}
-	return nil, errors.New(fmt.Sprint("getStartElementRecordFromToken unable to resolve", startElement))
 }
 
 func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
@@ -305,7 +304,6 @@ func (e *encoder) getAttributeRecordFromToken(attr xml.Attr) (record, error) {
 			}
 		}
 	}
-	return nil, errors.New(fmt.Sprint("getAttributeRecordFromToken unable to resolve", attr))
 }
 
 func hasSpecialDictionaryPrefix(str string) bool {
