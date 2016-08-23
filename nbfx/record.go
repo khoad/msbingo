@@ -2,7 +2,6 @@ package nbfx
 
 import (
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -66,7 +65,7 @@ func getRecord(b byte) (record, error) {
 		return rec, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("Unknown record %#x", b))
+	return nil, fmt.Errorf("Unknown record %#x", b)
 }
 
 var records = make(map[byte]record)

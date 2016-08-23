@@ -85,7 +85,7 @@ func (e *encoder) Encode(reader io.Reader) ([]byte, error) {
 			err = errors.New(fmt.Sprint("NotSupported: Encoding record", record))
 		}
 		if err != nil {
-			return e.bin.Bytes(), errors.New(fmt.Sprintf("Error writing Token %s :: %s", token, err.Error()))
+			return e.bin.Bytes(), fmt.Errorf("Error writing Token %s :: %s", token, err.Error())
 		}
 		token, err = e.popToken()
 	}
@@ -202,7 +202,7 @@ func (e *encoder) getTextRecordFromText(text string, withEndElement bool) (recor
 	if rec, ok := records[id]; ok {
 		return rec, nil
 	}
-	return nil, errors.New(fmt.Sprintf("Unknown text record id %#X for %s withEndElement %v", id, text, withEndElement))
+	return nil, fmt.Errorf("Unknown text record id %#X for %s withEndElement %v", id, text, withEndElement)
 }
 
 func isQNameDictionaryText(text string) bool {
@@ -323,7 +323,7 @@ func writeString(e *encoder, str string) (int, error) {
 func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	max := uint32(2147483647)
 	if num > max {
-		return 0, errors.New(fmt.Sprintf("Overflow: i (%d) must be <= max (%d)", num, max))
+		return 0, fmt.Errorf("Overflow: i (%d) must be <= max (%d)", num, max)
 	}
 	if num < mask_mbi31 {
 		return 1, e.bin.WriteByte(byte(num))
