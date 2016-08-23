@@ -16,7 +16,7 @@ type Decoder interface {
 }
 
 // for MultiByteInt31
-const mask_mbi31 = uint32(0x80) //0x80 = 128
+const maskMbi31 = uint32(0x80) //0x80 = 128
 
 var b64 = base64.StdEncoding.WithPadding(base64.StdPadding)
 

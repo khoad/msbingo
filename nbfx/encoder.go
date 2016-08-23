@@ -327,12 +327,12 @@ func writeMultiByteInt31(e *encoder, num uint32) (int, error) {
 	if num > max {
 		return 0, fmt.Errorf("Overflow: i (%d) must be <= max (%d)", num, max)
 	}
-	if num < mask_mbi31 {
+	if num < maskMbi31 {
 		return 1, e.bin.WriteByte(byte(num))
 	}
-	q := num / mask_mbi31
-	rem := num % mask_mbi31
-	err := e.bin.WriteByte(byte(mask_mbi31 + rem))
+	q := num / maskMbi31
+	rem := num % maskMbi31
+	err := e.bin.WriteByte(byte(maskMbi31 + rem))
 	if err != nil {
 		return 1, err
 	}
