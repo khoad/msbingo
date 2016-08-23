@@ -1,17 +1,5 @@
 package nbfs
 
-import "errors"
-
-func addStandardEntries(dict map[uint32]string) error {
-	for i, s := range nbfsDictionary {
-		if _, exists := dict[i]; exists {
-			return errors.New("Dictionary already contains NBFS entries")
-		}
-		dict[i] = s
-	}
-	return nil
-}
-
 var nbfsDictionary = map[uint32]string{
 	0x00:  "mustUnderstand",
 	0x02:  "Envelope",

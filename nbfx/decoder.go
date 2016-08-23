@@ -29,10 +29,12 @@ func (d *decoder) addDictionaryString(index uint32, value string) {
 	d.dict[index] = value
 }
 
+// NewDecoder creates a new NBFX Decoder
 func NewDecoder() Decoder {
 	return NewDecoderWithStrings(nil)
 }
 
+// NewDecoderWithStrings creates a new NBFX Decoder with a dictionary (like an NBFS dictionary)
 func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 	decoder := &decoder{dict: map[uint32]string{}}
 	if dictionaryStrings != nil {

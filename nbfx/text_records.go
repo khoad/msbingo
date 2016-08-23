@@ -84,7 +84,7 @@ func (r *textRecordBase) isText() bool {
 }
 
 func (r *textRecordBase) readText(d *decoder) (string, error) {
-	return "", errors.New(fmt.Sprintf("NotImplemented: %v.readText %v", r.name, r))
+	return "", fmt.Errorf("NotImplemented: %v.readText %v", r.name, r)
 }
 
 func (r *textRecordBase) writeText(e *encoder, text string) error {

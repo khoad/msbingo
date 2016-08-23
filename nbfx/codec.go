@@ -5,10 +5,12 @@ import (
 	"io"
 )
 
+// Encoder is the interface for encoding NBFX
 type Encoder interface {
 	Encode(io.Reader) ([]byte, error)
 }
 
+// Decoder is the interface for decoding NBFX
 type Decoder interface {
 	Decode(io.Reader) (string, error)
 }

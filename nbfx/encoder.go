@@ -29,10 +29,12 @@ func (e *encoder) addDictionaryString(index uint32, value string) {
 	e.dict[value] = index
 }
 
+// NewEncoder creates a new NBFX Encoder
 func NewEncoder() Encoder {
 	return NewEncoderWithStrings(nil)
 }
 
+// NewEncoderWithStrings creates a new NBFX Encoder with a dictionary (like an NBFS dictionary)
 func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 	encoder := &encoder{dict: map[string]uint32{}}
 	if dictionaryStrings != nil {
