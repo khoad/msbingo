@@ -23,7 +23,7 @@ type elementRecordBase struct {
 	recordBase
 }
 
-func (e *elementRecordBase) isStartElement() bool { return true }
+func (r *elementRecordBase) isStartElement() bool { return true }
 
 func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *decoder) (record, error) {
 	var peekRecord record
