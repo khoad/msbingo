@@ -602,17 +602,3 @@ func testReadMultiByteInt31(t *testing.T, bin []byte, expected uint32) {
 		return
 	}
 }
-
-func assertStringEqual(t *testing.T, actual, expected string) {
-	if expected != actual {
-		t.Error(actual + " not equal to expected " + expected)
-	}
-}
-
-func failOn(err error, message string, t *testing.T) bool {
-	if err != nil {
-		t.Error(message)
-		return true
-	}
-	return false
-}

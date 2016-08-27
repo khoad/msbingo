@@ -93,17 +93,3 @@ func TestDecodePrefixDictionaryElementS(t *testing.T) {
 	}
 	assertEqual(t, actual, "<s:Envelope>")
 }
-
-func assertEqual(t *testing.T, actual, expected string) {
-	if expected != actual {
-		t.Error(actual + "\nnot equal to expected\n" + expected)
-	}
-}
-
-func failOn(err error, message string, t *testing.T) bool {
-	if err != nil {
-		t.Error(message)
-		return true
-	}
-	return false
-}
