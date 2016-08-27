@@ -1,3 +1,6 @@
+// Package nbfs provides implementation of Microsoft [MC-NBFS]: .NET Binary Format: SOAP Data Structure
+//
+// More info https://msdn.microsoft.com/en-us/library/cc219175.aspx
 package nbfs
 
 import "github.com/khoad/msbingo/nbfx"

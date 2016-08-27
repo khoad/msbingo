@@ -1,3 +1,6 @@
+// Package nbfx provides implementation of Microsoft [MC-NBFX]: .NET Binary Format: XML Data Structure
+//
+// More info https://msdn.microsoft.com/en-us/library/cc219210.aspx
 package nbfx
 
 import (

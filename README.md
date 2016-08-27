@@ -53,6 +53,6 @@ This project began as an unstructured/personal time project for a few of our tea
 
 # Codec details
 NBFS is a codec developed by Microsoft for use primarily by WCF webservices. It is essentially a binary encoding for Soap XML messages optimized for reducing bytes over the wire.  They have published the specification in multiple parts:
-* [NBFX (.NET Binary Format: Xml)](https://msdn.microsoft.com/en-us/library/cc219210.aspx)
+* [NBFX (.NET Binary Format: XML Data Structure)](https://msdn.microsoft.com/en-us/library/cc219210.aspx)
 * [NBFS (.NET Binary Format: SOAP Data Structure)](https://msdn.microsoft.com/en-us/library/cc219175.aspx)
 where NBFS is essentially NBFX with standard DictionaryString entries for strings commonly used in SOAP, such as "Envelope", "http://www.w3.org/2003/05/soap-envelope/", etc., to minimize the bytewise size overhead of the SOAP protocol.
