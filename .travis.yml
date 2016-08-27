@@ -6,11 +6,13 @@ notifications:
 go:
   - tip
 
-install:
-  - go get -t ./...
+before_install:
   - go get golang.org/x/tools/cmd/cover
+  - go get github.com/modocache/gover
   - go get github.com/mattn/goveralls
 
 script:
-  - go test -v ./nbfx -covermode=count -coverprofile=coverage.out
-  - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+  - go test -v ./nbfx -coverprofile=nbfx.coverprofile
+  - go test -v ./nbfs -coverprofile=nbfs.coverprofile
+  - gover
+  - goveralls -coverprofile=gover.coverprofile -service=travis-ci -repotoken $COVERALLS_TOKEN
