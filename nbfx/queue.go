@@ -3,15 +3,14 @@ package nbfx
 // Queue is a struct with "first", "last" and "length" properties
 //https://gist.github.com/bemasher/1777766
 type Queue struct {
-	first  *QueueElement
-	last   *QueueElement
+	first  *queueElement
+	last   *queueElement
 	length int
 }
 
-// QueueElement can be used in Queue struct
-type QueueElement struct {
+type queueElement struct {
 	value interface{} // All types satisfy the empty interface, so we can store anything here.
-	next  *QueueElement
+	next  *queueElement
 }
 
 // Len returns the queue's length
@@ -21,7 +20,7 @@ func (q *Queue) Len() int {
 
 // Enqueue adds a new element into the queue
 func (q *Queue) Enqueue(value interface{}) {
-	element := &QueueElement{value, nil}
+	element := &queueElement{value, nil}
 	if q.first == nil {
 		q.first = element
 		q.last = element
