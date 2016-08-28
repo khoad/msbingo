@@ -4,6 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/khoad/msbingo)](https://goreportcard.com/report/github.com/khoad/msbingo)
 ![](https://img.shields.io/badge/windows-ready-green.svg)
 
+| NBFX | NBFS |
+|:----:|:----:|
+|[![GoDoc](https://godoc.org/github.com/khoad/msbingo/nbfx?status.png)](https://godoc.org/github.com/khoad/msbingo/nbfx)|[![GoDoc](https://godoc.org/github.com/khoad/msbingo/nbfs?status.png)](https://godoc.org/github.com/khoad/msbingo/nbfs)
+
 An implementation of NBFX and NBFS, which is expressed in HTTP terms as `Content-Type: application/soap+msbin1`, written in pure Go to enable interop with a WCF service and Go with no other dependencies (like Mono or Windows).
 
 This implementation follows the Microsoft specification closely in naming, structure and example. Tests for both decoding and encoding have been written for each of the Structure Examples provided, to validate the given bytes encode to the given XML and vice versa.
