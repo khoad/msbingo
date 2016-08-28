@@ -29,7 +29,7 @@ func (r *endElementRecord) isEndElement() bool {
 }
 
 func (r *endElementRecord) decodeElement(d *decoder) (record, error) {
-	item := d.elementStack.Pop()
+	item := d.elementStack.pop()
 	element := item.(xml.StartElement)
 	endElementToken := xml.EndElement{Name: xml.Name{Local: element.Name.Local, Space: element.Name.Space}}
 	err := d.xml.EncodeToken(endElementToken)
@@ -114,14 +114,14 @@ func (r *arrayRecord) decodeElement(d *decoder) (record, error) {
 			if err != nil {
 				return nil, err
 			}
-			d.elementStack.Push(startElement)
+			d.elementStack.push(startElement)
 		}
 		_, err = valDecoder.decodeText(d, valDecoder)
 		if err != nil {
 			return nil, err
 		}
 		if i < len {
-			d.elementStack.Push(startElement)
+			d.elementStack.push(startElement)
 		}
 	}
 	return nil, nil

@@ -3,22 +3,22 @@ package nbfx
 import "testing"
 
 func TestStack(t *testing.T) {
-	stack := Stack{}
+	stack := stack{}
 
-	assertEqual(t, stack.Len(), 0)
-	stack.Push("hello")
-	assertEqual(t, stack.Len(), 1)
-	stack.Push("world")
-	assertEqual(t, stack.Len(), 2)
+	assertEqual(t, stack.size, 0)
+	stack.push("hello")
+	assertEqual(t, stack.size, 1)
+	stack.push("world")
+	assertEqual(t, stack.size, 2)
 
-	val := stack.Pop()
+	val := stack.pop()
 	assertEqual(t, val, "world")
-	assertEqual(t, stack.Len(), 1)
-	val = stack.Pop()
+	assertEqual(t, stack.size, 1)
+	val = stack.pop()
 	assertEqual(t, val, "hello")
-	assertEqual(t, stack.Len(), 0)
+	assertEqual(t, stack.size, 0)
 
-	val = stack.Pop()
+	val = stack.pop()
 	assertEqual(t, val, nil)
-	assertEqual(t, stack.Len(), 0)
+	assertEqual(t, stack.size, 0)
 }

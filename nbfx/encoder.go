@@ -19,7 +19,7 @@ type encoder struct {
 	dict        map[string]uint32
 	xml         *xml.Decoder
 	bin         *bytes.Buffer
-	tokenBuffer Queue
+	tokenBuffer queue
 }
 
 func (e *encoder) addDictionaryString(index uint32, value string) {
@@ -48,8 +48,8 @@ func NewEncoderWithStrings(dictionaryStrings map[uint32]string) Encoder {
 func (e *encoder) popToken() (xml.Token, error) {
 	var token xml.Token
 	var err error
-	if e.tokenBuffer.Len() > 0 {
-		token = e.tokenBuffer.Dequeue().(xml.Token)
+	if e.tokenBuffer.length > 0 {
+		token = e.tokenBuffer.dequeue().(xml.Token)
 		return token, err
 	}
 	token, err = e.xml.RawToken()
@@ -58,7 +58,7 @@ func (e *encoder) popToken() (xml.Token, error) {
 }
 
 func (e *encoder) pushToken(token xml.Token) {
-	e.tokenBuffer.Enqueue(token)
+	e.tokenBuffer.enqueue(token)
 }
 
 func (e *encoder) Encode(reader io.Reader) ([]byte, error) {

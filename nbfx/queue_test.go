@@ -3,22 +3,22 @@ package nbfx
 import "testing"
 
 func TestQueue(t *testing.T) {
-	queue := Queue{}
+	queue := queue{}
 
-	assertEqual(t, queue.Len(), 0)
-	queue.Enqueue("hello")
-	assertEqual(t, queue.Len(), 1)
-	queue.Enqueue("world")
-	assertEqual(t, queue.Len(), 2)
+	assertEqual(t, queue.length, 0)
+	queue.enqueue("hello")
+	assertEqual(t, queue.length, 1)
+	queue.enqueue("world")
+	assertEqual(t, queue.length, 2)
 
-	val := queue.Dequeue()
+	val := queue.dequeue()
 	assertEqual(t, val, "hello")
-	assertEqual(t, queue.Len(), 1)
-	val = queue.Dequeue()
+	assertEqual(t, queue.length, 1)
+	val = queue.dequeue()
 	assertEqual(t, val, "world")
-	assertEqual(t, queue.Len(), 0)
+	assertEqual(t, queue.length, 0)
 
-	val = queue.Dequeue()
+	val = queue.dequeue()
 	assertEqual(t, val, nil)
-	assertEqual(t, queue.Len(), 0)
+	assertEqual(t, queue.length, 0)
 }

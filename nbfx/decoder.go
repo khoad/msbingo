@@ -17,7 +17,7 @@ import (
 
 type decoder struct {
 	dict         map[uint32]string
-	elementStack Stack
+	elementStack stack
 	bin          io.Reader
 	xml          *xml.Encoder
 }

@@ -62,7 +62,7 @@ func (r *elementRecordBase) readElementAttributes(element xml.StartElement, d *d
 		return nil, err
 	}
 
-	d.elementStack.Push(element)
+	d.elementStack.push(element)
 
 	return peekRecord, nil
 }
