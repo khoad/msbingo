@@ -556,7 +556,13 @@ func isUuid(text string) bool {
 }
 
 func readTimeSpanText(d *decoder) (string, error) {
-	return "", errors.New("NotImplemented: TimeSpanText")
+	buf, err := readBytes(d.bin, 8)
+	if err != nil {
+		return "", err
+	}
+	var val int64
+	binary.Read(buf, binary.LittleEndian, &val)
+	return "[Timespan Not Implemented] " + fmt.Sprint(val), errors.New("NotImplemented: TimeSpanText")
 }
 
 func readBoolText(d *decoder) (string, error) {
