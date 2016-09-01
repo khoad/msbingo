@@ -562,7 +562,15 @@ func readTimeSpanText(d *decoder) (string, error) {
 	}
 	var val int64
 	binary.Read(buf, binary.LittleEndian, &val)
-	return "[Timespan Not Implemented] " + fmt.Sprint(val), errors.New("NotImplemented: TimeSpanText")
+	timeSpan := fmt.Sprint(time.Duration(val) * time.Nanosecond * 100)
+	if strings.HasPrefix(timeSpan, "-") {
+		timeSpan = strings.Replace(timeSpan, "-", "-PT", 1)
+	} else {
+		timeSpan = "PT" + timeSpan
+	}
+	timeSpan = strings.ToUpper(timeSpan)
+	timeSpan = strings.Replace(timeSpan, "0S", "", 1)
+	return timeSpan, nil
 }
 
 func readBoolText(d *decoder) (string, error) {
