@@ -1,8 +1,5 @@
 language: go
 
-notifications:
-  email: false
-
 go:
   - tip
 
