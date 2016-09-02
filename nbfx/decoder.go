@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	. "math/big"
 	"regexp"
 	"strings"
 	"time"
@@ -419,14 +420,30 @@ func readDecimalText(d *decoder) (string, error) {
 	var lo64 uint64
 	binary.Read(buf, binary.LittleEndian, &lo64)
 
-	//(Hi32 * 2^64 + Lo64) / 10^scale
-	val := (float64(hi32)*(1<<64) + float64(lo64)) / math.Pow10(int(scale))
+	// Goal: (Hi32 * 2^64 + Lo64) / 10^scale
 
+	// 2^64
+	var limit64 Int
+	limit64.Exp(NewInt(2), NewInt(64), nil)
+
+	var bigFirstPartInt Int
+	// Hi32 * 2^64
+	bigFirstPartInt.Mul(NewInt(int64(hi32)), &limit64)
+
+	// Hi32 * 2^64 + Lo64
+	bigFirstPartInt.Add(&bigFirstPartInt, new(Int).SetUint64(lo64))
+
+	// (Hi32 * 2^64 + Lo64) / 10^scale
+	numText := fmt.Sprint(&bigFirstPartInt)
+	if scale > 0 {
+		decIdx := len(numText) - int(scale)
+		numText = numText[:decIdx] + "." + numText[decIdx:]
+	}
 	if sign == 0x80 {
-		val *= -1
+		numText = "-" + numText
 	}
 
-	return fmt.Sprint(val), nil
+	return numText, nil
 }
 
 func readDateTimeText(d *decoder) (string, error) {
