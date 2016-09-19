@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	. "math/big"
 	"regexp"
@@ -47,7 +48,19 @@ func NewDecoderWithStrings(dictionaryStrings map[uint32]string) Decoder {
 }
 
 func (d *decoder) Decode(reader io.Reader) (string, error) {
-	d.bin = reader
+	// Use ioutil to read data from reader because if we try to read
+	//  this manually, we can run into edge cases where the data we get
+	//  back is unreliable and can contain extra unnecessary information
+	//  as observed when reading through http response body containing
+	//  extra zeros in sets of four.
+	// This also seems to increase memory allocation efficiency
+	// It is challenging to write a test for this bug as we haven't fully
+	//  understood what the root cause for the extra zeros is.
+	bytesRead, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	d.bin = bytes.NewBuffer(bytesRead)
 	xmlBuf := &bytes.Buffer{}
 	d.xml = xml.NewEncoder(xmlBuf)
 	rec, err := getNextRecord(d)
