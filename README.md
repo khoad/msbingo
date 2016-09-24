@@ -61,3 +61,13 @@ NBFS is a codec developed by Microsoft for use primarily by WCF webservices. It 
 * [NBFX (.NET Binary Format: XML Data Structure)](https://msdn.microsoft.com/en-us/library/cc219210.aspx)
 * [NBFS (.NET Binary Format: SOAP Data Structure)](https://msdn.microsoft.com/en-us/library/cc219175.aspx)
 where NBFS is essentially NBFX with standard DictionaryString entries for strings commonly used in SOAP, such as "Envelope", "http://www.w3.org/2003/05/soap-envelope/", etc., to minimize the bytewise size overhead of the SOAP protocol.
+
+# Contributors
+
+* [Khoa Nguyen (khoad)](https://github.com/khoad/)
+* [Tim Erickson (timerickson)](https://github.com/timerickson/)
+* [Ryan Brewer (ryanthecubfan)](https://github.com/ryanthecubfan/)
+
+# License
+
+msbingo is released under the Apache-2.0 license.
