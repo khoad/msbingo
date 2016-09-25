@@ -394,10 +394,6 @@ func readListText(d *decoder) (string, error) {
 	return strings.Join(items, " "), nil
 }
 
-// Right now (July 2016) Go does not have a built-in type for decimal. This implementation
-// is limited to float64, which is basically the largest built-in type that can be
-// represented for a .NET 128-bit decimal.
-// See [MS-OAUT] sec 2.2.26 and https://msdn.microsoft.com/en-us/library/364x0z75.aspx
 func readDecimalText(d *decoder) (string, error) {
 	d.bin.Read(make([]byte, 2)) // wReserved - ignored
 
