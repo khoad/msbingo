@@ -681,6 +681,16 @@ func TestWriteMultiByteInt31_268435456(t *testing.T) {
 	testWriteMultiByteInt31(t, 268435456, []byte{0x80, 0x80, 0x80, 0x80, 0x01})
 }
 
+func TestCharsUnescapingInAttributes(t *testing.T) {
+	t.Skip("TODO")
+	t.Error("Not Implemented: Chars Unescaping in Attributes")
+}
+
+func TestCharsUnescapingInElements(t *testing.T) {
+	t.Skip("TODO")
+	t.Error("Not Implemented: Chars Unescaping in Elements")
+}
+
 func TestWriteString_abc(t *testing.T) {
 	buffer := bytes.Buffer{}
 	str := "abc"
