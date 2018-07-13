@@ -244,7 +244,7 @@ func readUnicodeStringBytes(r io.Reader, len uint32) (string, error) {
 		if err != nil {
 			return string(runes), err
 		}
-		var runeInt int16
+		var runeInt uint16
 		binary.Read(runeBuf, binary.LittleEndian, &runeInt)
 		theRune := rune(runeInt)
 		runes = append(runes, theRune)
