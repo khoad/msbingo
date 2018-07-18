@@ -513,6 +513,12 @@ func TestDecodeExampleQNameDictionaryTextWithEndElement(t *testing.T) {
 		"<Type>s:str912</Type>")
 }
 
+func TestDecodeExampleUnicodeChars16TextWithChinese(t *testing.T) {
+	testDecode(t,
+		[]byte{0x40, 0x0c, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0xb7, 0x08, 0x91, 0x4E, 0x62, 0x88, 0x2D, 0x4E, 0x66, 0x5B, 0x5F},
+		"<PositionName>云衢中学</PositionName>")
+}
+
 //----------------------------------------------------
 
 func TestReadMultiByteInt31_17(t *testing.T) {
